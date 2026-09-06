@@ -24,9 +24,11 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Branch:** `main`
 
-**Current phase commit:** `b910d9d Implement Phase 2.2a data model and deterministic seed`
+**Phase 2.2a implementation commit:** `5f6e62e Fix Phase 2.2a schema idempotency and handoff metadata`
 
-**Remote state:** Phase 2.1 and Phase 2.2a are saved on GitHub; `origin/main` is synchronized through `b5acef8`.
+**Current HEAD at the latest functional verification:** `5f6e62e`.
+
+**Remote state:** `origin/main` remains synchronized through `634c749`; the Phase 2.2a idempotency fix and its closeout metadata are local and pending push.
 
 ## What Has Been Completed
 
@@ -76,6 +78,7 @@ Implemented:
 * Minimal typed records and `LabRepository` snapshot layer.
 * MySQL schema/seed integration tests and SQLite pure unit coverage.
 * Two-reset deterministic snapshot verification.
+* Direct schema replay verification without duplicate table or constraint errors.
 * Data-model documentation at `docs/architecture/data-model.md`.
 
 ## Runtime Topology
@@ -182,6 +185,7 @@ The following checks have passed after a reset:
 * `/health` returns database, Redis, and internal-api status `ok`.
 * Nginx does not expose `/internal/health`.
 * Container integration and unit tests: `12 passed`.
+* Direct `schema.sql` replay: two consecutive executions passed.
 * Host and network verification script passes.
 * Direct host TCP access to the actual MySQL, Redis, and internal-api container IPs is blocked.
 * Web container cannot fetch `http://example.com`.
@@ -191,7 +195,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1 and Phase 2.2a are saved on GitHub; local `main` is synchronized with `origin/main`.
+* Phase 2.1 and the prior Phase 2.2a baseline are saved on GitHub; the current schema idempotency fix is local and pending push.
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
@@ -212,6 +216,8 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 | `b910d9d` | Implemented Phase 2.2a data model and deterministic seed |
 | `66ad03f` | Updated Phase 2.2a handoff status |
 | `c91f457` | Closed Phase 2.2a open questions |
+| `634c749` | Recorded Phase 2.2a remote synchronization |
+| `5f6e62e` | Fixed Phase 2.2a schema replay idempotency and added regression coverage |
 
 ## Next Work
 
