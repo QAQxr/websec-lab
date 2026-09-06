@@ -26,7 +26,7 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Current phase commit:** `b910d9d Implement Phase 2.2a data model and deterministic seed`
 
-**Remote state:** Phase 2.1 is saved on GitHub at `1f4dd82`; Phase 2.2a commit `b910d9d` is currently local and unpushed.
+**Remote state:** Phase 2.1 is saved on GitHub at `1f4dd82`; Phase 2.2a commits `b910d9d`, `66ad03f`, and `c91f457` are currently local and pending push.
 
 ## What Has Been Completed
 
@@ -135,7 +135,7 @@ websec_lab_uploads
 websec_lab_mail
 ```
 
-An obsolete network named `websec_lab_public_edge` remains from the initial topology attempt. It is not used by the current Compose file.
+The obsolete network `websec_lab_public_edge` from the initial topology attempt was inspected, confirmed empty, and removed. No other project network was modified.
 
 ## How To Run
 
@@ -191,10 +191,10 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1 is saved on GitHub; Phase 2.2a is local and has not been pushed yet.
-* `websec_lab_public_edge` is an obsolete cleanup candidate.
-* Docker Compose reports that buildx is not installed and uses the fallback builder.
+* Phase 2.1 is saved on GitHub; Phase 2.2a is local and is pending push.
+* Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
+* The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
 * No registration/login/session workflow or REST business API exists yet; the `sessions` table is schema-only.
 * No learning mode, challenge mode, audit mode, PoC, patch, or vulnerability test exists yet.
 * No intentional SQLi, XSS, CSRF, IDOR, SSRF, upload, traversal, command injection, SSTI, XXE, deserialization, race, or authorization flaw has been added.
@@ -210,6 +210,8 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 | `99e2ab3` | Implemented Phase 2.1 infrastructure baseline |
 | `2ff431b` | Added project handoff document and saved Phase 2.1 state |
 | `b910d9d` | Implemented Phase 2.2a data model and deterministic seed |
+| `66ad03f` | Updated Phase 2.2a handoff status |
+| `c91f457` | Closed Phase 2.2a open questions |
 
 ## Next Work
 
