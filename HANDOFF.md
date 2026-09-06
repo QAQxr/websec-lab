@@ -26,7 +26,7 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Current phase commit:** `b910d9d Implement Phase 2.2a data model and deterministic seed`
 
-**Remote state:** Phase 2.1 is saved on GitHub at `1f4dd82`; Phase 2.2a commits `b910d9d`, `66ad03f`, and `c91f457` are currently local and pending push.
+**Remote state:** Phase 2.1 and Phase 2.2a are saved on GitHub; `origin/main` is synchronized through `b5acef8`.
 
 ## What Has Been Completed
 
@@ -191,7 +191,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1 is saved on GitHub; Phase 2.2a is local and is pending push.
+* Phase 2.1 and Phase 2.2a are saved on GitHub; local `main` is synchronized with `origin/main`.
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
