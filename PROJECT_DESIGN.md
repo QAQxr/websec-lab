@@ -138,17 +138,36 @@ Browser form or fetch
 
 The design intentionally supports both server-rendered HTML and JSON API requests for the same service methods. This lets a learner compare browser behavior, raw HTTP, and source code without learning two unrelated applications.
 
-## A.5 Configuration Profiles
+## A.5 Layer Boundaries
+
+The application uses an explicit request-to-data boundary:
+
+```text
+Route
+  -> Service
+  -> Policy (when the operation is protected)
+  -> Repository
+  -> database or approved infrastructure client
+```
+
+* **Route:** Parses HTTP input, selects the service operation, and serializes the response. It does not make object-authorization decisions or build SQL.
+* **Service:** Orchestrates the use case, validates business invariants, invokes policy decisions, and controls the transaction boundary.
+* **Policy:** Makes the final authorization decision from the principal, action, resource, membership, role, and request context. It does not load arbitrary data or render responses.
+* **Repository:** Performs persistence and narrowly scoped queries. It does not decide whether a caller may access a resource.
+
+Public infrastructure endpoints in Phase 2.1 have no protected resource and therefore do not need an authorization policy. The boundary is still preserved so later authenticated routes cannot move authorization into individual routes or repositories.
+
+## A.6 Configuration Profiles
 
 Configuration will be explicit rather than inferred from host state.
 
 | Setting | Default | Purpose |
 |---|---|---|
 | `LAB_VARIANT` | `vulnerable` | Selects vulnerable or patched service behavior |
-| `DATABASE_URL` | MySQL Compose URL | Allows SQLite test runs without changing business code |
+| `DATABASE_URL` | MySQL Compose URL | Runtime database; SQLite is selected only by pure unit-test processes |
 | `REDIS_URL` | `redis://redis:6379/0` | Session and queue backend |
 | `INTERNAL_API_URL` | `http://internal-api:8081` | Private service target for the SSRF chain |
-| `LAB_EGRESS` | `deny` | Prevents accidental requests to public services |
+| `LAB_EGRESS` | `deny` | Application-level guard; Docker `internal` networks provide the default network-level egress boundary |
 | `LEARNING_MODE` | `off` | Enables hints and data-flow views for an authenticated learner |
 | `AUDIT_MODE` | `off` | Enables source/config/schema bundles only in the local lab |
 | `SEED_DATA` | `true` | Creates deterministic fake users and business objects |
@@ -156,7 +175,7 @@ Configuration will be explicit rather than inferred from host state.
 
 The vulnerable behavior is selected by a lab registry and feature flags, not by exposing routes named after vulnerability types. A learner should see the same product navigation in normal and challenge modes.
 
-## A.6 Frontend Structure
+## A.7 Frontend Structure
 
 The frontend will remain server-rendered HTML with small JavaScript modules.
 
@@ -190,7 +209,7 @@ The UI will use the same API endpoints that Burp can capture. JavaScript will pr
 
 ## B.1 Storage Strategy
 
-MySQL is the default runtime database. SQLite is supported for unit tests, quick source-audit exercises, and offline development. SQLAlchemy models and a small repository abstraction will keep business code portable. Any intentionally database-specific blind SQLi behavior will be isolated in a clearly documented lab adapter so the rest of the application remains portable.
+MySQL is the default runtime database and the required database for integration and security tests. SQLite is supported only for pure unit tests that do not depend on SQL dialect behavior, transactions, locking, isolation, or concurrency. SQLAlchemy models and a small repository abstraction will keep business code portable. SQLi, blind SQLi, transaction, locking, and race-condition tests must run against MySQL so their behavior matches the target runtime.
 
 Migrations and seed data will be deterministic. A reset must remove named volumes, recreate schema, and reproduce the same identifiers and relationships.
 
@@ -666,19 +685,19 @@ Optional test and audit profiles may add a one-shot test runner, but normal star
 ## E.2 Networks
 
 ```text
-public_edge
+public_edge (Docker internal: true)
   nginx <-> web
 
-app_private
+app_private (Docker internal: true)
   web <-> mysql
   web <-> redis
   web <-> internal-api
   internal-api <-> mysql (only if needed by its fixture)
 ```
 
-`public_edge` is the only network connected to Nginx. `app_private` has no host-published ports. MySQL, Redis, and internal-api must not publish `3306`, `6379`, or `8081` to the host.
+Both Compose networks are declared `internal: true`. This is the default network-level egress control: containers have no externally routed network path, while the Nginx port publication still permits the host loopback entry point. `public_edge` is the only network connected to Nginx. `app_private` has no host-published ports. MySQL, Redis, and internal-api must not publish `3306`, `6379`, or `8081` to the host.
 
-The web container needs both networks. Nginx needs only `public_edge`. Internal data services need only `app_private`. This makes the browser-to-web and web-to-internal-service boundary observable in Docker inspection and Burp traffic.
+The web container needs both internal networks. Nginx needs only `public_edge`. Internal data services need only `app_private`. This makes the browser-to-web and web-to-internal-service boundary observable in Docker inspection and Burp traffic without giving web a public egress route.
 
 ## E.3 Host Binding and Volumes
 
@@ -703,7 +722,8 @@ No host source directory, Docker socket, SSH key, home directory, or arbitrary h
 
 The lab must be safe by default:
 
-* `LAB_EGRESS=deny` blocks or intercepts outbound requests from the web container.
+* Docker `internal: true` networks provide the primary default-deny egress boundary; this must be verified from inside web and internal-api containers.
+* `LAB_EGRESS=deny` is a secondary application-level guard for experiment behavior and is not treated as the network boundary.
 * SSRF fixtures target `internal-api` first and never depend on a public website.
 * Containers do not receive cloud metadata credentials.
 * No container gets `/var/run/docker.sock`.
@@ -719,12 +739,11 @@ Nginx will route:
 
 ```text
 /static/    -> static assets
-/uploads/   -> controlled file serving path
 /api/       -> web JSON routes
 /           -> web HTML routes
 ```
 
-It will add a request id and proxy headers. A separate reverse-proxy lab will examine trusted `X-Forwarded-*` headers, URI normalization, upload path handling, and discrepancies between Nginx and Flask route matching. The normal patched proxy configuration will normalize paths and avoid trusting client-supplied internal identity headers.
+Nginx must not serve `/uploads/` or any other filesystem-backed resource directly. File responses must first pass through Flask authorization and then be streamed by the application, or use an Nginx `internal` location reached only through an application-generated internal redirect. A separate reverse-proxy lab will examine trusted `X-Forwarded-*` headers, URI normalization, upload path handling, and discrepancies between Nginx and Flask route matching. The normal patched proxy configuration will normalize paths and avoid trusting client-supplied internal identity headers.
 
 ---
 
@@ -736,49 +755,49 @@ All identifiers below are local training identifiers. They are not CVE records a
 
 | ID | Business surface | Source to sink | Intended issue | Level | Final fix |
 |---|---|---|---|---:|---|
-| `VULN-2026-0001` | Project search | `q` query -> search service -> concatenated SQL -> MySQL | Classic SQL injection with project/user data exposure | 1 | Parameterized query and typed filters |
-| `VULN-2026-0002` | Username availability | `username` query -> availability repository -> boolean SQL condition -> response difference | Boolean blind SQL injection | 1 | Parameterized query and uniform response |
-| `VULN-2026-0003` | Profile website and search results | request parameter -> HTML template -> response body | Reflected XSS | 1 | Contextual output encoding and safe URL validation |
-| `VULN-2026-0004` | Bio, project description, comments, messages | request body -> database -> template rendering | Stored XSS / HTML injection | 1 | Contextual escaping, safe text rendering, optional allowlist |
-| `VULN-2026-0005` | Notification redirect and settings merge | JSON/API value -> browser JavaScript -> unsafe DOM sink | DOM XSS | 1 | `textContent`, URL policy, safe object handling |
-| `VULN-2026-0006` | Profile email change | cross-site form -> state-changing POST -> account data | CSRF on high-value action | 2 | CSRF token, SameSite policy, origin checks |
-| `VULN-2026-0007` | Project detail and member list | path `project_id` -> repository lookup -> response without membership predicate | Project IDOR | 2 | Central object authorization |
-| `VULN-2026-0008` | File download and preview | path `file_id` -> file lookup -> bytes without project authorization | File IDOR | 2 | Authorize file and parent project before read |
-| `VULN-2026-0009` | Message detail | path `message_id` -> message lookup -> body response | Message object access flaw | 2 | Sender/recipient policy in every representation |
+| `LAB-SQLI-001` | Project search | `q` query -> search service -> concatenated SQL -> MySQL | Classic SQL injection with project/user data exposure | 1 | Parameterized query and typed filters |
+| `LAB-SQLI-002` | Username availability | `username` query -> availability repository -> boolean SQL condition -> response difference | Boolean blind SQL injection | 1 | Parameterized query and uniform response |
+| `LAB-XSS-001` | Profile website and search results | request parameter -> HTML template -> response body | Reflected XSS | 1 | Contextual output encoding and safe URL validation |
+| `LAB-XSS-002` | Bio, project description, comments, messages | request body -> database -> template rendering | Stored XSS / HTML injection | 1 | Contextual escaping, safe text rendering, optional allowlist |
+| `LAB-XSS-003` | Notification redirect and settings merge | JSON/API value -> browser JavaScript -> unsafe DOM sink | DOM XSS | 1 | `textContent`, URL policy, safe object handling |
+| `LAB-CSRF-001` | Profile email change | cross-site form -> state-changing POST -> account data | CSRF on high-value action | 2 | CSRF token, SameSite policy, origin checks |
+| `LAB-IDOR-001` | Project detail and member list | path `project_id` -> repository lookup -> response without membership predicate | Project IDOR | 2 | Central object authorization |
+| `LAB-IDOR-002` | File download and preview | path `file_id` -> file lookup -> bytes without project authorization | File IDOR | 2 | Authorize file and parent project before read |
+| `LAB-IDOR-003` | Message detail | path `message_id` -> message lookup -> body response | Message object access flaw | 2 | Sender/recipient policy in every representation |
 
 ## F.2 Intermediate Labs
 
 | ID | Business surface | Source to sink | Intended issue | Level | Final fix |
 |---|---|---|---|---:|---|
-| `VULN-2026-0010` | Member role update | client role -> membership service -> role assignment | Privilege escalation through weak authorization | 2 | Server-derived policy and role transition rules |
-| `VULN-2026-0011` | File upload and preview | filename/MIME/content -> storage -> inline browser response | Unrestricted upload and active content handling | 2 | Content inspection, generated names, safe disposition, isolated storage |
-| `VULN-2026-0012` | File download | stored relative path -> path join -> filesystem read | Path traversal / arbitrary file read in a real download flow | 2 | Resolve-and-contain check and opaque storage ids |
-| `VULN-2026-0013` | Password reset | email/time/user data -> reset token -> reset endpoint | Weak, reusable, or enumerable reset token | 2 | Random hashed one-time token with expiry and invalidation |
-| `VULN-2026-0014` | Login and remember-me | pre-auth session -> login -> authenticated session | Session fixation or incomplete session rotation | 2 | Rotate session id and invalidate prior authentication state |
-| `VULN-2026-0015` | API admin route | role header or API key metadata -> middleware -> admin handler | Authentication/authorization boundary bypass | 2 | Derive identity from verified session/key and enforce scope |
+| `LAB-AUTH-001` | Member role update | client role -> membership service -> role assignment | Privilege escalation through weak authorization | 2 | Server-derived policy and role transition rules |
+| `LAB-FILE-001` | File upload and preview | filename/MIME/content -> storage -> inline browser response | Unrestricted upload and active content handling | 2 | Content inspection, generated names, safe disposition, isolated storage |
+| `LAB-FILE-002` | File download | stored relative path -> path join -> filesystem read | Path traversal / arbitrary file read in a real download flow | 2 | Resolve-and-contain check and opaque storage ids |
+| `LAB-AUTH-002` | Password reset | email/time/user data -> reset token -> reset endpoint | Weak, reusable, or enumerable reset token | 2 | Random hashed one-time token with expiry and invalidation |
+| `LAB-AUTH-003` | Login and remember-me | pre-auth session -> login -> authenticated session | Session fixation or incomplete session rotation | 2 | Rotate session id and invalidate prior authentication state |
+| `LAB-AUTH-004` | API admin route | role header or API key metadata -> middleware -> admin handler | Authentication/authorization boundary bypass | 2 | Derive identity from verified session/key and enforce scope |
 
 ## F.3 Advanced Labs
 
 | ID | Business surface | Source to sink | Intended issue | Level | Final fix |
 |---|---|---|---|---:|---|
-| `VULN-2026-0016` | Project URL import/link preview | JSON `url` -> import service -> HTTP client -> internal-api | SSRF with internal service discovery | 3 | Scheme/host allowlist, DNS/IP validation, egress policy, timeouts |
-| `VULN-2026-0017` | Image thumbnail/diagnostic preview | filename/options -> shell command builder -> subprocess | Command injection | 3 | No shell, argument array, fixed executable, validation and sandbox |
-| `VULN-2026-0018` | Report/template preview | project template text -> Jinja environment -> render | SSTI | 3 | Treat input as data; fixed templates and sandboxed variables |
-| `VULN-2026-0019` | XML project feed import | uploaded XML -> XML parser -> entity resolution/file access | XXE | 3 | Defused parser, external entities disabled, size limits |
-| `VULN-2026-0020` | Queued import task | base64 task blob -> Redis queue -> deserialization | Insecure deserialization | 4 | JSON schema, signed messages, no pickle/eval |
-| `VULN-2026-0021` | Training points redemption | balance read -> check -> decrement -> reward insert | Race condition / duplicate redemption | 3 | Transaction, row lock, unique idempotency key |
-| `VULN-2026-0022` | Proxy-aware rate limit and admin path | client headers/normalized path -> proxy/middleware -> privileged branch | Reverse-proxy trust and path discrepancy | 4 | Canonical path, trusted proxy config, server-derived identity |
-| `VULN-2026-0023` | Frontend preference merge | JSON preferences -> recursive merge -> inherited object lookup | Prototype pollution-style client-side object mutation | 3 | Own-property checks, null-prototype objects, schema validation |
+| `LAB-SSRF-001` | Project URL import/link preview | JSON `url` -> import service -> HTTP client -> internal-api | SSRF with internal service discovery | 3 | Scheme/host allowlist, DNS/IP validation, egress policy, timeouts |
+| `LAB-CMD-001` | Image thumbnail/diagnostic preview | filename/options -> shell command builder -> subprocess | Command injection | 3 | No shell, argument array, fixed executable, validation and sandbox |
+| `LAB-SSTI-001` | Report/template preview | project template text -> Jinja environment -> render | SSTI | 3 | Treat input as data; fixed templates and sandboxed variables |
+| `LAB-XXE-001` | XML project feed import | uploaded XML -> XML parser -> entity resolution/file access | XXE | 3 | Defused parser, external entities disabled, size limits |
+| `LAB-DESER-001` | Queued import task | base64 task blob -> Redis queue -> deserialization | Insecure deserialization | 4 | JSON schema, signed messages, no pickle/eval |
+| `LAB-RACE-001` | Training points redemption | balance read -> check -> decrement -> reward insert | Race condition / duplicate redemption | 3 | Transaction, row lock, unique idempotency key |
+| `LAB-PROXY-001` | Proxy-aware rate limit and admin path | client headers/normalized path -> proxy/middleware -> privileged branch | Reverse-proxy trust and path discrepancy | 4 | Canonical path, trusted proxy config, server-derived identity |
+| `LAB-CLIENT-001` | Frontend preference merge | JSON preferences -> recursive merge -> inherited object lookup | Prototype pollution-style client-side object mutation | 3 | Own-property checks, null-prototype objects, schema validation |
 
 ## F.4 Disclosure and Supporting Issues
 
 | ID | Business surface | Intended issue | Chain role |
 |---|---|---|---|
-| `VULN-2026-0024` | Debug response and error page | Stack traces, framework versions, route/config details | Discovery entry |
-| `VULN-2026-0025` | API docs and backup fixture | Undocumented endpoints, fake API keys, old settings | Discovery and token exposure |
-| `VULN-2026-0026` | Admin log viewer | Sensitive URL, token, parameter, or message data in logs | Disclosure and stored-rendering path |
-| `VULN-2026-0027` | Redis temporary data | Predictable key or unsafe trust in cached task state | Deserialization/session support |
-| `VULN-2026-0028` | Webhook configuration | Unvalidated callback URL and weak secret handling | SSRF and credential disclosure support |
+| `LAB-DISC-001` | Debug response and error page | Stack traces, framework versions, route/config details | Discovery entry |
+| `LAB-DISC-002` | API docs and backup fixture | Undocumented endpoints, fake API keys, old settings | Discovery and token exposure |
+| `LAB-DISC-003` | Admin log viewer | Sensitive URL, token, parameter, or message data in logs | Disclosure and stored-rendering path |
+| `LAB-DISC-004` | Redis temporary data | Predictable key or unsafe trust in cached task state | Deserialization/session support |
+| `LAB-SSRF-002` | Webhook configuration | Unvalidated callback URL and weak secret handling | SSRF and credential disclosure support |
 
 The design does not require every support issue to be independently exploitable. Some exist to make source-to-sink and chain analysis realistic.
 
@@ -926,7 +945,7 @@ Each chain requires:
 | 2 Basic | Object authorization and state changes | Project/file/message IDOR, CSRF, upload, download path handling, API authorization |
 | 3 Intermediate | Server-side integrations and processing | SSRF, SSTI, command injection, XXE, race condition |
 | 4 Advanced | Multi-step analysis and trust boundaries | Deserialization, auth bypass variants, role escalation, proxy behavior, chained XSS/CSRF/SSRF |
-| 5 Research | White-box audit and remediation | Source audit, patch-v1 bypass, final patch, local VULN report, CVE-style write-up |
+| 5 Research | White-box audit and remediation | Source audit, patch-v1 bypass, final patch, local LAB report, CVE-style write-up |
 
 ## H.2 Learning Mode
 
@@ -1063,7 +1082,7 @@ The project will not target:
 * Exploiting arbitrary third-party websites as part of the default lab.
 * Scanning networks outside the Compose private network.
 * Production-grade availability or compliance guarantees.
-* A claim that local `VULN-2026-*` identifiers are CVEs.
+* A claim that local `LAB-*` identifiers are CVEs.
 
 ## I.6 Safety and Reset Controls
 
@@ -1098,9 +1117,33 @@ Deliver:
 
 Gate: no implementation begins until the route names, seed relationships, and initial three labs are stable.
 
-## Phase 2: Minimal Runnable Application
+## Phase 2: Minimal Runnable Application (parent scope)
+
+Phase 2 is split into infrastructure and application milestones. The current implementation boundary is Phase 2.1 only; no business workflow or intentional security weakness is included before its gate passes.
+
+### Phase 2.1: Infrastructure Baseline (current)
 
 Implement only:
+
+* Docker Compose with Nginx, web, MySQL, Redis, and internal-api.
+* Loopback-only Nginx entry point and Docker-internal networks.
+* Basic Flask landing and health responses.
+* MySQL, Redis, and internal-api connectivity checks without secret disclosure.
+* Health checks, deterministic bootstrap, and a reset script.
+
+Tests:
+
+* Compose services start and become healthy.
+* Nginx -> Flask, Flask -> MySQL, Flask -> Redis, and Flask -> internal-api.
+* Host cannot directly connect to private services.
+* Default container egress is blocked by Docker network topology.
+* Reset reproduces the same clean bootstrap state.
+
+Gate: `docker compose up -d` starts the stack, `http://127.0.0.1:8080` and `/health` respond, private services have no host ports, and reset verification passes.
+
+### Phase 2.2: Core Application (future)
+
+Implement only after the Phase 2.1 gate:
 
 * Compose startup with Nginx, web, MySQL, and Redis.
 * Schema migration and deterministic seed.
@@ -1115,7 +1158,7 @@ Initial tests:
 * Registration/login/logout.
 * Session expiry and role loading.
 * Project ownership and basic CRUD.
-* MySQL and SQLite repository smoke tests.
+* MySQL repository integration tests; SQLite repository unit tests only.
 
 Gate: `docker compose up -d` starts the stack, `http://127.0.0.1:8080` loads, and seeded credentials work.
 
@@ -1160,7 +1203,7 @@ Implement:
 * Progressive hints and progress persistence.
 * Challenge objectives and verifiers.
 * Source/config/schema audit bundle.
-* Instructor notes and local VULN report format.
+* Instructor notes and local LAB report format.
 
 Gate: the same feature remains usable in normal mode, challenge mode, and audit mode without exposing vulnerability labels in ordinary navigation.
 
@@ -1297,7 +1340,7 @@ This design phase is considered stable when:
 * The threat model prevents accidental use against real systems.
 * The roadmap limits each vulnerability increment to two or three issues before verification.
 
-The next approved implementation step is Phase 2: create the minimal runnable application and verify its startup before adding any intentional vulnerability.
+The next approved implementation step is Phase 2.1: create and verify the infrastructure baseline before adding any business workflow or intentional vulnerability.
 
 ---
 
