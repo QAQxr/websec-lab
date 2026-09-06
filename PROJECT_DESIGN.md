@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** design only; application code has not started
+**Implementation status:** Phase 2.2a database model and deterministic seed complete; business routes have not started
 
 ---
 
@@ -1123,9 +1123,9 @@ Gate: no implementation begins until the route names, seed relationships, and in
 
 ## Phase 2: Minimal Runnable Application (parent scope)
 
-Phase 2 is split into infrastructure and application milestones. The current implementation boundary is Phase 2.1 only; no business workflow or intentional security weakness is included before its gate passes.
+Phase 2 is split into gated infrastructure, data, and application milestones. Only the explicitly approved subphase may be implemented; no intentional security weakness is included in the current data milestone.
 
-### Phase 2.1: Infrastructure Baseline (current)
+### Phase 2.1: Infrastructure Baseline (complete)
 
 Implement only:
 
@@ -1145,7 +1145,20 @@ Tests:
 
 Gate: `docker compose up -d` starts the stack, `http://127.0.0.1:8080` and `/health` respond, private services have no host ports, and reset verification passes.
 
-### Phase 2.2: Core Application (future)
+### Phase 2.2a: Database Model and Deterministic Seed (complete)
+
+Implement only:
+
+* MySQL schema for core and supporting tables.
+* Database bootstrap and migration marker.
+* Deterministic seed users, projects, memberships, files, messages, comments, notifications, API keys, audit logs, and settings.
+* Minimal repository/record layer for database verification and snapshots.
+* MySQL schema/seed integration tests and SQLite pure unit tests.
+* Deterministic reset snapshot verification and data-model documentation.
+
+Gate: schema, foreign keys, unique constraints, indexes, seed relationships, deterministic snapshots, and Phase 2.1 regression tests pass.
+
+### Phase 2.2b: Core Application (future)
 
 Implement only after the Phase 2.1 gate:
 
@@ -1344,7 +1357,7 @@ This design phase is considered stable when:
 * The threat model prevents accidental use against real systems.
 * The roadmap limits each vulnerability increment to two or three issues before verification.
 
-The next approved implementation step is Phase 2.1: create and verify the infrastructure baseline before adding any business workflow or intentional vulnerability.
+The next implementation step is Phase 2.2b: core application workflows, only after explicit approval. Phase 2.2b must not introduce intentional vulnerabilities.
 
 ---
 

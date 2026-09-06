@@ -12,11 +12,11 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 ## Current Status
 
-**Current phase:** Phase 2.1 complete
+**Current phase:** Phase 2.2a complete
 
-**Active work:** None. The Phase 2.1 Docker stack is currently running.
+**Active work:** None. The Phase 2.1 Docker stack is currently running with the Phase 2.2a schema and seed loaded.
 
-**Next allowed phase:** Phase 2.2, only after explicit approval
+**Next allowed phase:** Phase 2.2b, only after explicit approval
 
 **Intentional vulnerabilities:** None implemented
 
@@ -24,9 +24,9 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Branch:** `main`
 
-**Current commit:** `2ff431b Add project handoff document`
+**Current phase commit:** To be recorded after the Phase 2.2a commit.
 
-**Remote state:** Local `main` and `origin/main` are synchronized at `2ff431b`.
+**Remote state:** Phase 2.1 is saved on GitHub at `1f4dd82`; Phase 2.2a changes are currently local and unpushed.
 
 ## What Has Been Completed
 
@@ -63,6 +63,20 @@ Implemented:
 * No Docker socket, home directory, SSH key, or credential mounts.
 * Reset script that recreates the stack and named volumes.
 * Container integration tests and pure configuration unit tests.
+
+### Phase 2.2a Database Model and Deterministic Seed
+
+Implemented:
+
+* Canonical MySQL schema in `database/schema.sql`.
+* Migration metadata in `schema_migrations` and migration guidance in `database/migrations/`.
+* Core tables: users, sessions, projects, project_members, files, messages, comments, notifications, api_keys, audit_logs, system_settings.
+* Supporting schema tables for verification, reset, sharing, imports, points, training, attempts, and password history.
+* Deterministic local-only users, projects, ownership, memberships, files, messages, comments, notifications, fake API keys, audit logs, and system settings.
+* Minimal typed records and `LabRepository` snapshot layer.
+* MySQL schema/seed integration tests and SQLite pure unit coverage.
+* Two-reset deterministic snapshot verification.
+* Data-model documentation at `docs/architecture/data-model.md`.
 
 ## Runtime Topology
 
@@ -167,7 +181,7 @@ The following checks have passed after a reset:
 * Nginx landing page returns AcmeCloud/WebSec Lab HTML.
 * `/health` returns database, Redis, and internal-api status `ok`.
 * Nginx does not expose `/internal/health`.
-* Container integration and unit tests: `6 passed`.
+* Container integration and unit tests: `12 passed`.
 * Host and network verification script passes.
 * Direct host TCP access to the actual MySQL, Redis, and internal-api container IPs is blocked.
 * Web container cannot fetch `http://example.com`.
@@ -177,11 +191,11 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1 is saved on GitHub; future changes must be pushed explicitly when a phase is ready.
+* Phase 2.1 is saved on GitHub; Phase 2.2a is local and has not been pushed yet.
 * `websec_lab_public_edge` is an obsolete cleanup candidate.
 * Docker Compose reports that buildx is not installed and uses the fallback builder.
 * Active MySQL and Redis volume sizes have not been measured separately.
-* No user registration, authentication, sessions, projects, files, messages, comments, admin area, or REST business API exists yet.
+* No registration/login/session workflow or REST business API exists yet; the `sessions` table is schema-only.
 * No learning mode, challenge mode, audit mode, PoC, patch, or vulnerability test exists yet.
 * No intentional SQLi, XSS, CSRF, IDOR, SSRF, upload, traversal, command injection, SSTI, XXE, deserialization, race, or authorization flaw has been added.
 
@@ -198,15 +212,14 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Next Work
 
-Do not start Phase 2.2 automatically. The next implementation plan should be reviewed and explicitly approved first.
+Do not start Phase 2.2b automatically. The next implementation plan should be reviewed and explicitly approved first.
 
-Recommended Phase 2.2 order:
+Recommended Phase 2.2b order:
 
-1. Add the minimal application data model and deterministic seed.
-2. Add registration, simulated email verification, login, logout, and session display.
-3. Add MySQL integration tests for authentication and session lifecycle.
-4. Add a minimal dashboard and project CRUD without intentional vulnerabilities.
-5. Re-run the full Phase 2.1 regression suite after each increment.
+1. Add registration, simulated email verification, login, logout, and session display.
+2. Add MySQL integration tests for authentication and session lifecycle.
+3. Add a minimal dashboard and project CRUD without intentional vulnerabilities.
+4. Re-run the full Phase 2.1 and Phase 2.2a regression suites after each increment.
 
 Do not introduce vulnerability behavior until the normal business workflow is stable and a separate phase is approved.
 

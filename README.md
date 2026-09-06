@@ -1,6 +1,6 @@
 # WebSec Lab
 
-Phase 2.1 provides the minimum AcmeCloud infrastructure baseline:
+Phase 2.1 and Phase 2.2a provide the AcmeCloud infrastructure and deterministic database baseline:
 
 ```text
 Browser -> 127.0.0.1:8080 -> Nginx -> Flask web
@@ -24,9 +24,12 @@ Only Nginx publishes a host port. MySQL, Redis, and internal-api are private Com
 ```bash
 docker compose --profile test run --rm test-runner
 ./scripts/verify_phase21.sh
+./scripts/verify_determinism.sh
 ```
 
-Integration tests run against the Compose MySQL service. SQLite is reserved for pure unit tests in later phases.
+Integration and schema tests run against the Compose MySQL 8.4 service. SQLite is reserved for pure unit tests.
+
+The Phase 2.2a fixture contains fake local-only users, projects, memberships, files, messages, comments, notifications, API keys, audit logs, and system settings. No business API exposes this data yet.
 
 ## Reset
 

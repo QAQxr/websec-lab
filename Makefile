@@ -1,4 +1,4 @@
-.PHONY: up down reset test verify
+.PHONY: up down reset test verify determinism
 
 up:
 	docker compose up -d --build
@@ -14,3 +14,6 @@ test:
 
 verify:
 	./scripts/verify_phase21.sh
+
+determinism:
+	./scripts/verify_determinism.sh
