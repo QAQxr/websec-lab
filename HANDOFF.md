@@ -24,9 +24,9 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Branch:** `main`
 
-**Current commit:** `99e2ab3 Implement Phase 2.1 infrastructure baseline`
+**Current commit:** `2ff431b Add project handoff document`
 
-**Remote state:** Local `main` is ahead of `origin/main` by four commits. These Phase 2.1 commits have not been pushed.
+**Remote state:** Local `main` and `origin/main` are synchronized at `2ff431b`.
 
 ## What Has Been Completed
 
@@ -177,7 +177,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1 commits are local only and have not been pushed to GitHub.
+* Phase 2.1 is saved on GitHub; future changes must be pushed explicitly when a phase is ready.
 * `websec_lab_public_edge` is an obsolete cleanup candidate.
 * Docker Compose reports that buildx is not installed and uses the fallback builder.
 * Active MySQL and Redis volume sizes have not been measured separately.
@@ -194,6 +194,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 | `35625e5` | Corrected Nginx host-ingress topology |
 | `ab720c7` | Added strict private bridge isolation |
 | `99e2ab3` | Implemented Phase 2.1 infrastructure baseline |
+| `2ff431b` | Added project handoff document and saved Phase 2.1 state |
 
 ## Next Work
 
