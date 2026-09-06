@@ -24,9 +24,9 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Branch:** `main`
 
-**Current phase commit:** To be recorded after the Phase 2.2a commit.
+**Current phase commit:** `b910d9d Implement Phase 2.2a data model and deterministic seed`
 
-**Remote state:** Phase 2.1 is saved on GitHub at `1f4dd82`; Phase 2.2a changes are currently local and unpushed.
+**Remote state:** Phase 2.1 is saved on GitHub at `1f4dd82`; Phase 2.2a commit `b910d9d` is currently local and unpushed.
 
 ## What Has Been Completed
 
@@ -209,6 +209,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 | `ab720c7` | Added strict private bridge isolation |
 | `99e2ab3` | Implemented Phase 2.1 infrastructure baseline |
 | `2ff431b` | Added project handoff document and saved Phase 2.1 state |
+| `b910d9d` | Implemented Phase 2.2a data model and deterministic seed |
 
 ## Next Work
 
