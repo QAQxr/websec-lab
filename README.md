@@ -1,0 +1,39 @@
+# WebSec Lab
+
+Phase 2.1 provides the minimum AcmeCloud infrastructure baseline:
+
+```text
+Browser -> 127.0.0.1:8080 -> Nginx -> Flask web
+                                      |-> MySQL
+                                      |-> Redis
+                                      `-> internal-api
+```
+
+## Start
+
+```bash
+docker compose up -d --build
+```
+
+Open `http://127.0.0.1:8080/` and check `http://127.0.0.1:8080/health`.
+
+Only Nginx publishes a host port. MySQL, Redis, and internal-api are private Compose services. Both application networks are Docker `internal` networks, so the default runtime has no public egress path. `LAB_EGRESS=deny` remains an application-level guard and is not the network isolation mechanism.
+
+## Tests and Verification
+
+```bash
+docker compose --profile test run --rm test-runner
+./scripts/verify_phase21.sh
+```
+
+Integration tests run against the Compose MySQL service. SQLite is reserved for pure unit tests in later phases.
+
+## Reset
+
+The reset script removes this Compose project's named volumes and recreates the stack:
+
+```bash
+./scripts/reset.sh
+```
+
+This is a disposable local training environment. Do not add real credentials, host mounts, SSH keys, Docker socket mounts, or production data.

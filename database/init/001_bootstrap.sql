@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS lab_bootstrap (
+    marker VARCHAR(64) PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO lab_bootstrap (marker) VALUES ('phase-2.1');

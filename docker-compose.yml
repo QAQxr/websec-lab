@@ -1,0 +1,197 @@
+name: websec-lab
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-websec_lab}
+      MYSQL_USER: ${MYSQL_USER:-websec}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-websec_lab_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-websec_root_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app_private
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_private
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  internal-api:
+    build:
+      context: .
+      dockerfile: services/internal-api/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 8081
+      LAB_EGRESS: ${LAB_EGRESS:-deny}
+    expose:
+      - "8081"
+    networks:
+      - app_private
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/internal/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  web:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      LAB_EGRESS: ${LAB_EGRESS:-deny}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-websec_lab}
+      DB_USER: ${MYSQL_USER:-websec}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-websec_lab_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      INTERNAL_API_URL: http://internal-api:8081
+    expose:
+      - "5000"
+    volumes:
+      - uploads_data:/app/data/uploads
+      - mail_data:/app/data/mail
+    networks:
+      - proxy_private
+      - app_private
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      internal-api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - host_ingress
+      - proxy_private
+    depends_on:
+      web:
+        condition: service_healthy
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  test-runner:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["pytest", "-p", "no:cacheprovider", "-q", "tests/integration", "tests/unit"]
+    environment:
+      APP_ENV: test
+      LAB_EGRESS: deny
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-websec_lab}
+      DB_USER: ${MYSQL_USER:-websec}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-websec_lab_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      INTERNAL_API_URL: http://internal-api:8081
+      TEST_BASE_URL: http://nginx
+      PYTHONPATH: /app
+    networks:
+      - proxy_private
+      - app_private
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      internal-api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+      nginx:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  host_ingress:
+    name: websec_lab_host_ingress
+  proxy_private:
+    name: websec_lab_proxy_private
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.inhibit_ipv4: "true"
+  app_private:
+    name: websec_lab_app_private
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.inhibit_ipv4: "true"
+
+volumes:
+  mysql_data:
+    name: websec_lab_mysql_data
+  redis_data:
+    name: websec_lab_redis_data
+  uploads_data:
+    name: websec_lab_uploads
+  mail_data:
+    name: websec_lab_mail

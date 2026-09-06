@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+__pycache__
+*.py[cod]
+.pytest_cache
+*.log
+docs/
+exploits/
+patches/
