@@ -698,7 +698,7 @@ app_private (Docker internal: true)
   internal-api <-> mysql (only if needed by its fixture)
 ```
 
-`proxy_private` and `app_private` are declared `internal: true`. They provide the default network-level egress control for web and the data services. Docker does not expose a published port from an `internal` network, so Nginx also joins the dedicated non-internal `host_ingress` network; Nginx is the only service on that network and the only service with a host port. `app_private` has no host-published ports. MySQL, Redis, and internal-api must not publish `3306`, `6379`, or `8081` to the host.
+`proxy_private` and `app_private` are declared `internal: true` and use the bridge option `com.docker.network.bridge.inhibit_ipv4=true`. The option preserves container-to-container communication but prevents Docker from assigning a host-side IPv4 gateway to those bridges, so the host cannot route directly to private container IPs. The internal networks provide the default network-level egress control for web and the data services. Docker does not expose a published port from an `internal` network, so Nginx also joins the dedicated non-internal `host_ingress` network; Nginx is the only service on that network and the only service with a host port. `app_private` has no host-published ports. MySQL, Redis, and internal-api must not publish `3306`, `6379`, or `8081` to the host.
 
 The web container needs only `proxy_private` and `app_private`, both internal. Nginx needs `host_ingress` and `proxy_private`. Internal data services need only `app_private`. This makes the browser-to-web and web-to-internal-service boundary observable in Docker inspection and Burp traffic without giving web a public egress route.
 
