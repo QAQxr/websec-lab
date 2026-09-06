@@ -17,7 +17,7 @@ Phase 2.2a closeout decisions:
 
 Verification:
 
-* `12 passed`
+* `13 passed`
 * `schema.sql` executed twice consecutively without errors.
 * determinism verification passed.
 * Phase 2.1 regression passed.

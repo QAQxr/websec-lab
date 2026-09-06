@@ -184,7 +184,7 @@ The following checks have passed after a reset:
 * Nginx landing page returns AcmeCloud/WebSec Lab HTML.
 * `/health` returns database, Redis, and internal-api status `ok`.
 * Nginx does not expose `/internal/health`.
-* Container integration and unit tests: `12 passed`.
+* Container integration and unit tests: `13 passed`.
 * Direct `schema.sql` replay: two consecutive executions passed.
 * Host and network verification script passes.
 * Direct host TCP access to the actual MySQL, Redis, and internal-api container IPs is blocked.
