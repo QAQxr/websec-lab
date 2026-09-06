@@ -84,8 +84,25 @@ CREATE TABLE IF NOT EXISTS files (
     KEY idx_files_storage_path (storage_path(191))
 ) ENGINE=InnoDB;
 
-ALTER TABLE users
-    ADD CONSTRAINT fk_users_avatar_file FOREIGN KEY (avatar_file_id) REFERENCES files (id) ON DELETE SET NULL ON UPDATE CASCADE;
+-- Add the cross-referenced FK after files exists, while allowing schema replay.
+SET @fk_users_avatar_file_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND CONSTRAINT_NAME = 'fk_users_avatar_file'
+      AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+
+SET @add_users_avatar_file_fk = IF(
+    @fk_users_avatar_file_exists = 0,
+    'ALTER TABLE users ADD CONSTRAINT fk_users_avatar_file FOREIGN KEY (avatar_file_id) REFERENCES files (id) ON DELETE SET NULL ON UPDATE CASCADE',
+    'SET @schema_noop = 1'
+);
+
+PREPARE add_users_avatar_file_fk FROM @add_users_avatar_file_fk;
+EXECUTE add_users_avatar_file_fk;
+DEALLOCATE PREPARE add_users_avatar_file_fk;
 
 CREATE TABLE IF NOT EXISTS sessions (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

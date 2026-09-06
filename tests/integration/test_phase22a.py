@@ -1,7 +1,9 @@
 import json
+from pathlib import Path
 
 import pymysql
 
+from backend.bootstrap import sql_statements
 from backend.config import Settings
 from backend.repositories.lab_repository import LabRepository
 
@@ -56,9 +58,25 @@ def query(sql, params=()):
         db.close()
 
 
+def execute_schema_script():
+    db = connection()
+    try:
+        with db.cursor() as cursor:
+            schema_path = Path(__file__).resolve().parents[2] / "database" / "schema.sql"
+            for statement in sql_statements(schema_path):
+                cursor.execute(statement)
+    finally:
+        db.close()
+
+
 def test_all_phase22a_tables_exist():
     names = LabRepository(Settings.from_env()).table_names()
     assert CORE_TABLES | SUPPORT_TABLES | {"schema_migrations"} <= names
+
+
+def test_schema_script_is_replayable():
+    execute_schema_script()
+    execute_schema_script()
 
 
 def test_primary_keys_foreign_keys_and_unique_constraints_exist():
