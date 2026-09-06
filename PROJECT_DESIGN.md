@@ -685,7 +685,10 @@ Optional test and audit profiles may add a one-shot test runner, but normal star
 ## E.2 Networks
 
 ```text
-public_edge (Docker internal: true)
+host_ingress (Docker internal: false; Nginx only)
+  host loopback -> nginx
+
+proxy_private (Docker internal: true)
   nginx <-> web
 
 app_private (Docker internal: true)
@@ -695,9 +698,9 @@ app_private (Docker internal: true)
   internal-api <-> mysql (only if needed by its fixture)
 ```
 
-Both Compose networks are declared `internal: true`. This is the default network-level egress control: containers have no externally routed network path, while the Nginx port publication still permits the host loopback entry point. `public_edge` is the only network connected to Nginx. `app_private` has no host-published ports. MySQL, Redis, and internal-api must not publish `3306`, `6379`, or `8081` to the host.
+`proxy_private` and `app_private` are declared `internal: true`. They provide the default network-level egress control for web and the data services. Docker does not expose a published port from an `internal` network, so Nginx also joins the dedicated non-internal `host_ingress` network; Nginx is the only service on that network and the only service with a host port. `app_private` has no host-published ports. MySQL, Redis, and internal-api must not publish `3306`, `6379`, or `8081` to the host.
 
-The web container needs both internal networks. Nginx needs only `public_edge`. Internal data services need only `app_private`. This makes the browser-to-web and web-to-internal-service boundary observable in Docker inspection and Burp traffic without giving web a public egress route.
+The web container needs only `proxy_private` and `app_private`, both internal. Nginx needs `host_ingress` and `proxy_private`. Internal data services need only `app_private`. This makes the browser-to-web and web-to-internal-service boundary observable in Docker inspection and Burp traffic without giving web a public egress route.
 
 ## E.3 Host Binding and Volumes
 
@@ -722,7 +725,8 @@ No host source directory, Docker socket, SSH key, home directory, or arbitrary h
 
 The lab must be safe by default:
 
-* Docker `internal: true` networks provide the primary default-deny egress boundary; this must be verified from inside web and internal-api containers.
+* Docker `internal: true` networks provide the primary default-deny egress boundary for web and internal-api; this must be verified from inside those containers.
+* Nginx's non-internal `host_ingress` attachment exists only to make the loopback port publication possible; Nginx does not perform application URL fetching in Phase 2.1.
 * `LAB_EGRESS=deny` is a secondary application-level guard for experiment behavior and is not treated as the network boundary.
 * SSRF fixtures target `internal-api` first and never depend on a public website.
 * Containers do not receive cloud metadata credentials.
