@@ -14,7 +14,7 @@ Phase 2.2a closeout decisions:
 * The Phase 2.2a baseline and schema idempotency fix were verified and pushed.
 * Phase 2.2b implementation commit: `31fc67e Implement Phase 2.2b authentication foundation`.
 * Current functional verification HEAD: `31fc67e`.
-* `origin/main` is synchronized through `ad9a81a`; Phase 2.2b remains local pending the push decision.
+* Phase 2.2b is pushed; local `main` and `origin/main` are synchronized through `878650c`.
 * Phase 2.2c is deferred and must be separately approved.
 
 Verification:
