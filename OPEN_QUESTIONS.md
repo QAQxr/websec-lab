@@ -12,9 +12,9 @@ Phase 2.2a closeout decisions:
 * Docker buildx was not installed. Compose fallback builder works, and the project build/tests do not require a buildx plugin.
 * The external host listener on `127.0.0.1:3306` was not stopped, restarted, or modified. WebSec Lab MySQL has no `ports` mapping.
 * The Phase 2.2a baseline and schema idempotency fix were verified and pushed.
-* Implementation commit: `5f6e62e Fix Phase 2.2a schema idempotency and handoff metadata`.
-* Current functional verification HEAD: `5f6e62e`.
-* Local `main` and `origin/main` are synchronized after the closeout push.
+* Phase 2.2b implementation commit: `31fc67e Implement Phase 2.2b authentication foundation`.
+* Current functional verification HEAD: `31fc67e`.
+* `origin/main` is synchronized through `ad9a81a`; Phase 2.2b remains local pending the push decision.
 * Phase 2.2c is deferred and must be separately approved.
 
 Verification:
