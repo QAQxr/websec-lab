@@ -28,9 +28,9 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Phase 2.2b implementation commit:** `31fc67e Implement Phase 2.2b authentication foundation`
 
-**Phase 2.2b closeout fix:** Mailbox authorization and registration consistency changes; commit pending final verification.
+**Phase 2.2b closeout fix commit:** `c3b10f0 Fix Phase 2.2b mailbox access and registration consistency`
 
-**Current HEAD at the latest functional verification:** `31fc67e`.
+**Current HEAD at the latest functional verification:** `c3b10f0`.
 
 **Remote state:** Phase 2.2a and Phase 2.2b baseline are synchronized with `origin/main` through `1c33954`; the closeout fix is local.
 
@@ -249,6 +249,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 | `634c749` | Recorded Phase 2.2a remote synchronization |
 | `5f6e62e` | Fixed Phase 2.2a schema replay idempotency and added regression coverage |
 | `31fc67e` | Implemented Phase 2.2b authentication foundation |
+| `c3b10f0` | Fixed Phase 2.2b mailbox access and registration consistency |
 
 ## Next Work
 
