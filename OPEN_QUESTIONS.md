@@ -16,8 +16,7 @@ Phase 2.2a closeout decisions:
 * Current functional verification HEAD: `31fc67e`.
 * Phase 2.2b closeout fix commit: `c3b10f0 Fix Phase 2.2b mailbox access and registration consistency`.
 * Current functional verification HEAD: `c3b10f0`.
-* The closeout fix is verified locally and pending push.
-* Local `main` and `origin/main` are synchronized through `1c33954` before the closeout fix.
+* The closeout fix is verified and pushed; local `main` and `origin/main` are synchronized through `f84f033`.
 * Phase 2.2c is deferred and must be separately approved.
 
 Verification:

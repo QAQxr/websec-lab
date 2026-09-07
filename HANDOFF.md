@@ -32,7 +32,7 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Current HEAD at the latest functional verification:** `c3b10f0`.
 
-**Remote state:** Phase 2.2a and Phase 2.2b baseline are synchronized with `origin/main` through `1c33954`; the closeout fix is local.
+**Remote state:** Phase 2.2a, Phase 2.2b, and the closeout fix are synchronized with `origin/main` through `f84f033`.
 
 ## What Has Been Completed
 
@@ -223,7 +223,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1, Phase 2.2a, and the Phase 2.2b baseline are saved on GitHub; the closeout fix remains local pending commit/push.
+* Phase 2.1, Phase 2.2a, and all Phase 2.2b closeout changes are saved on GitHub; local `main` is synchronized with `origin/main`.
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
