@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Local mailbox{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1>Local simulated mailbox</h1>
+    <p class="muted">This local-only training view contains verification links. It is not a real mail service.</p>
+    {% if not messages %}
+        <p>No verification messages are waiting.</p>
+    {% else %}
+        {% for message in messages %}
+            <article class="card">
+                <p><strong>To:</strong> {{ message.to }}</p>
+                <p><strong>Subject:</strong> {{ message.subject }}</p>
+                <p><a href="{{ message.verification_url }}">Open verification link</a></p>
+                <p class="muted">Created {{ message.created_at }}</p>
+            </article>
+        {% endfor %}
+    {% endif %}
+</section>
+{% endblock %}

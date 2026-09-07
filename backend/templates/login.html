@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Log in{% endblock %}
+
+{% block content %}
+<section class="card form">
+    <h1>Log in</h1>
+    {% if registered %}<div class="success">Account created. Open the local mailbox to verify the address.</div>{% endif %}
+    {% if logged_out %}<div class="success">You have been logged out.</div>{% endif %}
+    {% if errors %}
+        <div class="error" role="alert">
+            {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+    <form method="post" action="{{ url_for('auth.login') }}">
+        <label for="identifier">Username or email</label>
+        <input id="identifier" name="identifier" type="text" required autocomplete="username">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password">
+        <label><input name="remember_me" type="checkbox"> Remember me on this device</label>
+        <button class="primary" type="submit">Log in</button>
+    </form>
+</section>
+{% endblock %}

@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2a database model and deterministic seed complete; business routes have not started
+**Implementation status:** Phase 2.2b authentication foundation complete; Project CRUD and later business modules have not started
 
 ---
 
@@ -1158,26 +1158,36 @@ Implement only:
 
 Gate: schema, foreign keys, unique constraints, indexes, seed relationships, deterministic snapshots, and Phase 2.1 regression tests pass.
 
-### Phase 2.2b: Core Application (future)
+### Phase 2.2b: Authentication Foundation (complete)
 
-Implement only after the Phase 2.1 gate:
+Implement only:
 
-* Compose startup with Nginx, web, MySQL, and Redis.
-* Schema migration and deterministic seed.
 * Registration, simulated verification, login, logout, and session display.
-* Dashboard and project create/list/detail/edit/delete.
-* Basic HTML and API parity.
-* Health checks and a reset script.
+* Random one-time verification tokens with hashed database representation and local mailbox output.
+* Server-side Redis sessions with MySQL lifecycle rows and session rotation.
+* HttpOnly/SameSite cookie configuration with local HTTP Secure handling.
+* Minimal authenticated profile and dashboard pages.
+* MySQL + Redis integration tests and password/session unit tests.
 
-Initial tests:
+Tests:
 
-* Application health.
 * Registration/login/logout.
 * Session expiry and role loading.
-* Project ownership and basic CRUD.
-* MySQL repository integration tests; SQLite repository unit tests only.
+* Verification expiry and single use.
+* Safe profile/session display.
+* MySQL and Redis integration tests; SQLite remains for pure unit tests only.
 
-Gate: `docker compose up -d` starts the stack, `http://127.0.0.1:8080` loads, and seeded credentials work.
+Gate: registration, verification, login, logout, session rotation/expiry, profile, dashboard, Phase 2.1 regression, and Phase 2.2a regression pass without intentional vulnerability behavior.
+
+### Phase 2.2c: Core Application (future)
+
+Implement only after explicit approval:
+
+* Dashboard project list and project create/list/detail/edit/delete.
+* Basic HTML and API parity for project workflows.
+* Project ownership and membership policy tests.
+
+Gate: ordinary authenticated users can complete the primary project workflow without lab-specific instructions.
 
 ## Phase 3: Core Business Modules
 
@@ -1357,7 +1367,7 @@ This design phase is considered stable when:
 * The threat model prevents accidental use against real systems.
 * The roadmap limits each vulnerability increment to two or three issues before verification.
 
-The next implementation step is Phase 2.2b: core application workflows, only after explicit approval. Phase 2.2b must not introduce intentional vulnerabilities.
+The next implementation step is Phase 2.2c: core project workflows, only after explicit approval. Phase 2.2c must not introduce intentional vulnerabilities.
 
 ---
 

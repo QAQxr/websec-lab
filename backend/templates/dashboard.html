@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="card">
+    <p class="muted">AcmeCloud workspace</p>
+    <h1>Welcome, {{ user.username }}</h1>
+    <p>You are signed in as <strong>{{ user.role }}</strong>.</p>
+    <p>Authentication foundation is active. Project workflows will be added in a later phase.</p>
+</section>
+{% endblock %}

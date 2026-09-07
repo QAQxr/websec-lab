@@ -1,16 +1,18 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AcmeCloud | WebSec Lab</title>
-</head>
-<body>
-    <main>
-        <p>WebSec Lab</p>
-        <h1>AcmeCloud workspace</h1>
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="card">
+    <p class="muted">WebSec Lab</p>
+    <h1>AcmeCloud workspace</h1>
+    {% if current_user %}
+        <p>Welcome back, <strong>{{ current_user.username }}</strong>.</p>
+        <p><a href="{{ url_for('site.dashboard') }}">Open your dashboard</a></p>
+    {% else %}
         <p>A local collaboration platform for the WebSec Lab.</p>
-        <p><a href="/health">Service health</a></p>
-    </main>
-</body>
-</html>
+        <p><a href="{{ url_for('auth.register') }}">Create an account</a> or <a href="{{ url_for('auth.login') }}">sign in</a>.</p>
+    {% endif %}
+    <p><a href="{{ url_for('health.health') }}">Service health</a></p>
+</section>
+{% endblock %}

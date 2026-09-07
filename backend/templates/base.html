@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}AcmeCloud{% endblock %} | WebSec Lab</title>
+    <style>
+        :root { color-scheme: light; font-family: system-ui, sans-serif; }
+        body { margin: 0; background: #f5f7fb; color: #172033; }
+        header { background: #172033; color: #fff; }
+        nav, main { max-width: 920px; margin: 0 auto; padding: 1rem; }
+        nav { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        nav a { color: #fff; text-decoration: none; }
+        nav .brand { font-weight: 700; margin-right: auto; }
+        nav form { margin: 0; }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        main { padding-top: 2rem; }
+        .card { background: #fff; border: 1px solid #dce2ec; border-radius: .75rem; padding: 1.25rem; margin: 1rem 0; }
+        .form { max-width: 32rem; }
+        label { display: block; font-weight: 600; margin-top: 1rem; }
+        input[type="text"], input[type="email"], input[type="password"] { box-sizing: border-box; width: 100%; padding: .65rem; margin-top: .35rem; border: 1px solid #aeb8c8; border-radius: .35rem; }
+        .primary { background: #315ddc; color: #fff; border: 0; border-radius: .35rem; padding: .7rem 1rem; margin-top: 1.25rem; }
+        .error { background: #fff0f0; border: 1px solid #e0a5a5; color: #7b2020; padding: .75rem; border-radius: .35rem; }
+        .success { background: #effaf2; border: 1px solid #9bd2a6; color: #1c5d2a; padding: .75rem; border-radius: .35rem; }
+        dt { font-weight: 700; margin-top: .75rem; }
+        dd { margin: .2rem 0 0; }
+        .muted { color: #596579; }
+        code { overflow-wrap: anywhere; }
+    </style>
+</head>
+<body>
+<header>
+    <nav>
+        <a class="brand" href="{{ url_for('site.landing') }}">AcmeCloud</a>
+        {% if current_user %}
+            <a href="{{ url_for('site.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('site.profile') }}">Profile</a>
+            <form action="{{ url_for('auth.logout') }}" method="post">
+                <button type="submit">Log out</button>
+            </form>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">Log in</a>
+            <a href="{{ url_for('auth.register') }}">Register</a>
+        {% endif %}
+    </nav>
+</header>
+<main>
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

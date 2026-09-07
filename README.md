@@ -1,12 +1,12 @@
 # WebSec Lab
 
-Phase 2.1 and Phase 2.2a provide the AcmeCloud infrastructure and deterministic database baseline:
+Phase 2.1, Phase 2.2a, and Phase 2.2b provide the AcmeCloud infrastructure, deterministic database baseline, and normal authentication foundation:
 
 ```text
 Browser -> 127.0.0.1:8080 -> Nginx -> Flask web
                                       |-> MySQL
                                       |-> Redis
-                                      `-> internal-api
+                                       `-> internal-api
 ```
 
 ## Start
@@ -30,6 +30,16 @@ docker compose --profile test run --rm test-runner
 Integration and schema tests run against the Compose MySQL 8.4 service. SQLite is reserved for pure unit tests.
 
 The Phase 2.2a fixture contains fake local-only users, projects, memberships, files, messages, comments, notifications, API keys, audit logs, and system settings. No business API exposes this data yet.
+
+## Authentication Foundation
+
+Phase 2.2b provides normal, non-vulnerable registration, simulated email verification, login, logout, server-side sessions, a safe profile/session view, and a minimal dashboard.
+
+Open `http://127.0.0.1:8080/register` to create a local account. New accounts are pending until the verification link is opened from the local-only mailbox at `http://127.0.0.1:8080/dev/mail`. The mailbox does not send real email.
+
+Authentication uses MySQL for users, verification records, and session audit rows, and Redis for active session state. The cookie contains only an opaque session identifier and is HttpOnly with SameSite=Lax. Local HTTP defaults to `Secure=false`; HTTPS-like deployments should set `SESSION_COOKIE_SECURE=true`.
+
+The phase does not include Project CRUD, REST business APIs, password reset, or intentional vulnerabilities.
 
 ## Reset
 

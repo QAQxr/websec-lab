@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<section class="card form">
+    <h1>Create an AcmeCloud account</h1>
+    <p class="muted">New accounts require simulated email verification before sign-in.</p>
+    {% if errors %}
+        <div class="error" role="alert">
+            {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+    <form method="post" action="{{ url_for('auth.register') }}">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" value="{{ values.username }}" required autocomplete="username">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" value="{{ values.email }}" required autocomplete="email">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required autocomplete="new-password">
+        <label for="password_confirmation">Confirm password</label>
+        <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
+        <button class="primary" type="submit">Register</button>
+    </form>
+</section>
+{% endblock %}

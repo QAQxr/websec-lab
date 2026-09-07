@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Email verification{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1>Email verification</h1>
+    <div class="{{ 'success' if success else 'error' }}" role="status">{{ message }}</div>
+    {% if success %}<p><a href="{{ url_for('auth.login') }}">Continue to log in</a></p>{% endif %}
+</section>
+{% endblock %}

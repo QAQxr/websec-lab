@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1>Profile and session</h1>
+    <p class="muted">This page shows safe identity and session metadata only.</p>
+    <dl>
+        <dt>Username</dt><dd>{{ user.username }}</dd>
+        <dt>Email</dt><dd>{{ user.email }}</dd>
+        <dt>Role</dt><dd>{{ user.role }}</dd>
+        <dt>Session created</dt><dd>{{ session.created_at }}</dd>
+        <dt>Last seen</dt><dd>{{ session.last_seen_at }}</dd>
+        <dt>Remember me</dt><dd>{{ 'yes' if session.remember_me else 'no' }}</dd>
+    </dl>
+</section>
+{% endblock %}

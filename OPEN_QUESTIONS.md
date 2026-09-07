@@ -2,6 +2,8 @@
 
 **Phase 2.2a:** complete
 
+**Phase 2.2b:** complete locally after final verification.
+
 **Open Questions:** resolved for this phase.
 
 Phase 2.2a closeout decisions:
@@ -13,13 +15,14 @@ Phase 2.2a closeout decisions:
 * Implementation commit: `5f6e62e Fix Phase 2.2a schema idempotency and handoff metadata`.
 * Current functional verification HEAD: `5f6e62e`.
 * Local `main` and `origin/main` are synchronized after the closeout push.
-* Phase 2.2b is deferred and must be separately approved.
+* Phase 2.2c is deferred and must be separately approved.
 
 Verification:
 
-* `13 passed`
+* Phase 2.2a baseline and Phase 2.2b authentication tests pass.
+* Full unit and integration suite: `30 passed`.
 * `schema.sql` executed twice consecutively without errors.
 * determinism verification passed.
 * Phase 2.1 regression passed.
 
-There are no unresolved Phase 2.2a operational questions.
+There are no unresolved Phase 2.2a or Phase 2.2b operational questions.

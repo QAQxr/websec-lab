@@ -2,7 +2,7 @@
 
 ## Source of Truth
 
-The executable schema is `database/schema.sql`. The deterministic fixture is `database/seed.sql`. The web bootstrap records `001_initial_schema` in `schema_migrations`, applies the schema once, and then runs the idempotent seed.
+The executable schema is `database/schema.sql`. The deterministic fixture is `database/seed.sql`. The web bootstrap records `002_phase22a_schema` in `schema_migrations`, applies the replay-safe schema, and then runs the idempotent seed.
 
 All application timestamps use MySQL `DATETIME(6)` values interpreted as UTC. Seed timestamps are fixed values so a reset produces the same snapshot. IDs are explicit stable unsigned integers in the seed and auto-incrementing unsigned integers for later application writes.
 
@@ -54,6 +54,7 @@ projects
 | Table | Responsibility | Important constraints |
 |---|---|---|
 | `users` | Local identities, roles, status, profile data | Unique username/email; role and status checks; password hash only |
+| `sessions` | Server-side authentication lifecycle rows | Unique opaque session key; user foreign key; activity timestamps |
 | `projects` | Workspace ownership and settings | Owner foreign key; unique slug; visibility check; JSON settings |
 | `project_members` | Per-project membership and role | Composite primary key; project/user foreign keys; role check |
 | `files` | File metadata and future storage references | Owner/project foreign keys; unique storage name; kind check |
@@ -66,7 +67,7 @@ projects
 
 ## Supporting Tables
 
-`email_verifications`, `password_resets`, `shares`, `webhook_configs`, `import_jobs`, `point_balances`, `point_redemptions`, `challenge_progress`, `lab_attempts`, and `password_history` are schema-only in Phase 2.2a. They exist to establish stable relationships for later business and training phases; no corresponding Web route or API is implemented yet.
+`password_resets`, `shares`, `webhook_configs`, `import_jobs`, `point_balances`, `point_redemptions`, `challenge_progress`, `lab_attempts`, and `password_history` remain schema-only after Phase 2.2b. `email_verifications` is now used by the registration and local verification flow. `sessions` is used by the authentication foundation and is backed by active Redis state plus a MySQL audit row.
 
 ## Seed Roles and Ownership
 

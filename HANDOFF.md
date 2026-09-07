@@ -4,7 +4,7 @@
 
 This is the current handoff and status document for WebSec Lab. Update it after every phase, design correction, verification run, or known-issue change.
 
-**Last updated:** 2026-09-06
+**Last updated:** 2026-09-07
 
 **Project path:** `~/opencode/projects/websec-lab`
 
@@ -12,11 +12,11 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 ## Current Status
 
-**Current phase:** Phase 2.2a complete
+**Current phase:** Phase 2.2b complete
 
-**Active work:** None. The Phase 2.1 Docker stack is currently running with the Phase 2.2a schema and seed loaded.
+**Active work:** None. The Phase 2.1 Docker stack is currently running with the Phase 2.2a schema/seed and Phase 2.2b authentication foundation loaded.
 
-**Next allowed phase:** Phase 2.2b, only after explicit approval
+**Next allowed phase:** Phase 2.2c, only after explicit approval
 
 **Intentional vulnerabilities:** None implemented
 
@@ -26,9 +26,11 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Phase 2.2a implementation commit:** `5f6e62e Fix Phase 2.2a schema idempotency and handoff metadata`
 
+**Phase 2.2b implementation:** Local authentication foundation changes; commit pending final verification.
+
 **Current HEAD at the latest functional verification:** `5f6e62e`.
 
-**Remote state:** Local `main` and `origin/main` are synchronized after the Phase 2.2a idempotency closeout push.
+**Remote state:** Phase 2.2a is synchronized with `origin/main`; Phase 2.2b changes are local and pending the final commit/push decision.
 
 ## What Has Been Completed
 
@@ -80,6 +82,19 @@ Implemented:
 * Two-reset deterministic snapshot verification.
 * Direct schema replay verification without duplicate table or constraint errors.
 * Data-model documentation at `docs/architecture/data-model.md`.
+
+### Phase 2.2b Authentication Foundation
+
+Implemented:
+
+* Registration with username/email validation, confirmation checks, pending status, and maintained scrypt password hashing.
+* Random one-time email verification tokens with hashed database storage, expiry, and local Redis mailbox output.
+* Login with pending/locked checks, server-side Redis sessions, MySQL session rows, last-login updates, and session rotation.
+* Logout with server-side invalidation and expired authentication cookie.
+* HttpOnly/SameSite cookie policy with configurable Secure behavior for local HTTP versus HTTPS-like deployments.
+* Safe `/profile` session display and authenticated `/dashboard`.
+* Password, session, authentication, verification, logout, dashboard, and security regression tests.
+* Authentication architecture documentation at `docs/architecture/authentication.md`.
 
 ## Runtime Topology
 
@@ -184,7 +199,8 @@ The following checks have passed after a reset:
 * Nginx landing page returns AcmeCloud/WebSec Lab HTML.
 * `/health` returns database, Redis, and internal-api status `ok`.
 * Nginx does not expose `/internal/health`.
-* Container integration and unit tests: `13 passed`.
+* Full unit and integration suite: `30 passed`.
+* Phase 2.2a schema/seed assertions remain covered inside the full suite.
 * Direct `schema.sql` replay: two consecutive executions passed.
 * Host and network verification script passes.
 * Direct host TCP access to the actual MySQL, Redis, and internal-api container IPs is blocked.
@@ -199,7 +215,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
-* No registration/login/session workflow or REST business API exists yet; the `sessions` table is schema-only.
+* Project CRUD and REST business APIs do not exist yet; they are deferred to Phase 2.2c.
 * No learning mode, challenge mode, audit mode, PoC, patch, or vulnerability test exists yet.
 * No intentional SQLi, XSS, CSRF, IDOR, SSRF, upload, traversal, command injection, SSTI, XXE, deserialization, race, or authorization flaw has been added.
 
@@ -221,14 +237,14 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Next Work
 
-Do not start Phase 2.2b automatically. The next implementation plan should be reviewed and explicitly approved first.
+Do not start Phase 2.2c automatically. The next implementation plan should be reviewed and explicitly approved first.
 
-Recommended Phase 2.2b order:
+Recommended Phase 2.2c order:
 
-1. Add registration, simulated email verification, login, logout, and session display.
-2. Add MySQL integration tests for authentication and session lifecycle.
-3. Add a minimal dashboard and project CRUD without intentional vulnerabilities.
-4. Re-run the full Phase 2.1 and Phase 2.2a regression suites after each increment.
+1. Add project list/create/detail/edit/delete workflows without intentional vulnerabilities.
+2. Add project ownership and membership policy tests.
+3. Add basic HTML/API parity only for approved project workflows.
+4. Re-run the full Phase 2.1, Phase 2.2a, and Phase 2.2b regression suites after each increment.
 
 Do not introduce vulnerability behavior until the normal business workflow is stable and a separate phase is approved.
 
