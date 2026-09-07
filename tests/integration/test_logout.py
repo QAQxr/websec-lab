@@ -10,7 +10,7 @@ from .auth_helpers import Browser, db_query, register, verify_account
 def login_verified_account(browser):
     account, response = register(browser)
     assert response.status == 302
-    verify_account(browser)
+    verify_account(browser, account)
     response = browser.request(
         "/login",
         form={"identifier": account["username"], "password": account["password"]},

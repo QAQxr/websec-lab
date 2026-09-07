@@ -41,6 +41,8 @@ def create_auth_blueprint(auth_service: AuthService, settings):
     def mailbox():
         if not settings.mailbox_enabled:
             return render_template("error.html", message="Not found."), 404
+        if g.current_user is None or g.current_user["role"] != "admin":
+            return render_template("error.html", message="You are not allowed to access this mailbox."), 403
         return render_template("mailbox.html", messages=auth_service.mailbox_messages())
 
     @blueprint.route("/login", methods=["GET", "POST"])

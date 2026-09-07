@@ -63,7 +63,7 @@ def test_login_rejects_pending_then_rotates_session_after_verification():
     assert response.status == 403
     assert "verify" in response.body.lower()
 
-    verify_account(browser)
+    verify_account(browser, account)
     old_session = "pre-authentication-session"
     response = browser.request(
         "/login",
@@ -88,7 +88,7 @@ def test_wrong_password_and_locked_account_are_rejected():
     browser = Browser()
     account, response = register(browser)
     assert response.status == 302
-    verify_account(browser)
+    verify_account(browser, account)
 
     response = browser.request(
         "/login",

@@ -12,7 +12,7 @@ def test_authenticated_dashboard_and_profile_expose_safe_session_data_only():
     browser = Browser()
     account, response = register(browser)
     assert response.status == 302
-    verify_account(browser)
+    verify_account(browser, account)
     response = browser.request(
         "/login",
         form={"identifier": account["username"], "password": account["password"]},

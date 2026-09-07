@@ -8,12 +8,12 @@ from urllib.request import (
     Request,
     build_opener,
 )
-import re
 import uuid
 
 import pymysql
 
 from backend.config import Settings
+from backend.repositories.mailbox_repository import MailboxRepository
 
 
 BASE_URL = "http://nginx"
@@ -87,15 +87,16 @@ def register(browser, account=None):
     return account, response
 
 
-def mailbox_token(browser):
-    response = browser.request("/dev/mail")
-    matches = re.findall(r"/verify/([^\"'<]+)", response.body)
-    assert matches, response.body
-    return urlparse(f"http://nginx/verify/{matches[0]}").path.rsplit("/", 1)[-1]
+def mailbox_token(browser, email=None):
+    messages = MailboxRepository(Settings.from_env()).list_verifications()
+    if email is not None:
+        messages = [message for message in messages if message["to"] == email]
+    assert messages
+    return urlparse(messages[0]["verification_url"]).path.rsplit("/", 1)[-1]
 
 
-def verify_account(browser):
-    token = mailbox_token(browser)
+def verify_account(browser, account):
+    token = mailbox_token(browser, account["email"])
     response = browser.request(f"/verify/{token}")
     assert response.status == 200, response.body
     return token

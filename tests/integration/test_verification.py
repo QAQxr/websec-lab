@@ -8,7 +8,7 @@ def test_verification_activates_user_and_is_single_use():
     browser = Browser()
     account, response = register(browser)
     assert response.status == 302
-    token = verify_account(browser)
+    token = verify_account(browser, account)
 
     row = db_query(
         """
@@ -35,7 +35,7 @@ def test_invalid_and_expired_verification_tokens_fail():
 
     account, response = register(browser)
     assert response.status == 302
-    token = mailbox_token(browser)
+    token = mailbox_token(browser, account["email"])
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     db_execute(
         "UPDATE email_verifications SET expires_at = %s WHERE token_hash = %s",

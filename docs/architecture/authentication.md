@@ -29,10 +29,11 @@ Password values are not written to application responses, logs, Redis, or the da
 ```text
 POST /register
   -> validate username, email, password, confirmation
-  -> create pending user
   -> generate random verification token
-  -> store SHA-256 token representation in email_verifications
+  -> one MySQL transaction creates the pending user and verification row
+  -> commit the MySQL registration state
   -> store the raw local link only in the Redis mailbox fixture
+  -> on mailbox failure, remove the mailbox key and compensate the MySQL rows
 
 GET /dev/mail
   -> local/test-only mailbox view
@@ -44,6 +45,8 @@ GET /verify/<token>
 ```
 
 The verification token is random, expires after the configured TTL, and can be consumed once. Normal product pages and error responses do not expose it.
+
+Registration consistency is deliberately simple: the user and verification record are one MySQL transaction. Redis mailbox delivery happens after that transaction and is treated as part of registration success. If the Redis write fails, the service removes any partial mailbox key and deletes the new verification row and pending user in a compensating MySQL transaction. The route returns a generic temporary-unavailable response; it does not leave a pending account with an unusable verification path.
 
 ## Sessions
 
@@ -78,7 +81,7 @@ Max-Age=session or remember-me TTL
 
 ## Local Mailbox
 
-`/dev/mail` is enabled only when `APP_ENV` is `local` or `test`. It does not send mail or connect to SMTP. Its purpose is to expose the local verification link during training. It is not linked as a normal product workflow.
+`/dev/mail` is enabled only when `APP_ENV` is `local` or `test` and the current authenticated user has the `admin` role. Unauthenticated and non-admin users receive `403 Forbidden`; production-like environments return `404 Not Found` because the feature is disabled. It does not send mail or connect to SMTP. Its purpose is to expose the local verification link during training, and it is not linked as a normal product workflow.
 
 ## Current Scope
 

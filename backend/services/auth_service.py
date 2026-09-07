@@ -6,6 +6,7 @@ import secrets
 
 from backend.config import Settings
 from backend.repositories.mailbox_repository import MailboxRepository
+from backend.repositories.registration_repository import RegistrationRepository
 from backend.repositories.session_repository import RedisSessionStore, SessionRepository
 from backend.repositories.user_repository import DuplicateAccountError, UserRepository
 from backend.repositories.verification_repository import VerificationRepository
@@ -24,6 +25,7 @@ class AuthError(Exception):
 @dataclass(frozen=True)
 class AuthDependencies:
     users: UserRepository
+    registrations: RegistrationRepository
     verifications: VerificationRepository
     mailbox: MailboxRepository
     sessions: SessionService
@@ -36,6 +38,7 @@ class AuthService:
     def __init__(self, settings: Settings, dependencies: AuthDependencies, clock=utc_now):
         self.settings = settings
         self.users = dependencies.users
+        self.registrations = dependencies.registrations
         self.verifications = dependencies.verifications
         self.mailbox = dependencies.mailbox
         self.sessions = dependencies.sessions
@@ -52,29 +55,41 @@ class AuthService:
 
         now = self.clock()
         password_hash = PasswordService.hash_password(password)
+        raw_token = secrets.token_urlsafe(32)
         try:
-            user_id = self.users.create_pending(username, email, password_hash, now)
+            user_id, verification_id = self.registrations.create_pending_with_verification(
+                username,
+                email,
+                password_hash,
+                self._hash_token(raw_token),
+                now + timedelta(seconds=self.settings.verification_ttl_seconds),
+                now,
+            )
         except DuplicateAccountError as error:
             raise AuthError("That username or email is already in use.", 409) from error
 
-        raw_token = secrets.token_urlsafe(32)
-        verification_id = self.verifications.create(
-            user_id,
-            self._hash_token(raw_token),
-            now + timedelta(seconds=self.settings.verification_ttl_seconds),
-            now,
-        )
-        self.mailbox.put_verification(
-            verification_id,
-            {
-                "id": verification_id,
-                "to": email,
-                "subject": "Verify your AcmeCloud account",
-                "verification_url": f"{self.settings.public_base_url.rstrip('/')}/verify/{raw_token}",
-                "created_at": now.isoformat(),
-            },
-            self.settings.verification_ttl_seconds,
-        )
+        message = {
+            "id": verification_id,
+            "to": email,
+            "subject": "Verify your AcmeCloud account",
+            "verification_url": f"{self.settings.public_base_url.rstrip('/')}/verify/{raw_token}",
+            "created_at": now.isoformat(),
+        }
+        try:
+            self.mailbox.put_verification(
+                verification_id,
+                message,
+                self.settings.verification_ttl_seconds,
+            )
+        except Exception as error:
+            try:
+                self.mailbox.remove_verification(verification_id)
+            finally:
+                self.registrations.rollback_registration(user_id, verification_id)
+            raise AuthError(
+                "Registration is temporarily unavailable. Please try again.",
+                503,
+            ) from error
 
     def verify_email(self, token: str) -> None:
         if not token or len(token) > 200:
@@ -149,12 +164,13 @@ class AuthService:
         return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def build_auth_service(settings: Settings) -> AuthService:
+def build_auth_service(settings: Settings, mailbox: MailboxRepository | None = None) -> AuthService:
     session_repository = SessionRepository(settings)
     dependencies = AuthDependencies(
         users=UserRepository(settings),
+        registrations=RegistrationRepository(settings),
         verifications=VerificationRepository(settings),
-        mailbox=MailboxRepository(settings),
+        mailbox=mailbox or MailboxRepository(settings),
         sessions=SessionService(
             session_repository,
             RedisSessionStore(settings),
