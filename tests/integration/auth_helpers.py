@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from http.cookiejar import CookieJar
+import json
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urljoin, urlparse
 from urllib.request import (
@@ -41,11 +42,29 @@ class Browser:
             NoRedirectHandler(),
         )
 
-    def request(self, path, form=None, method=None, follow_redirects=True, headers=None):
+    def request(
+        self,
+        path,
+        form=None,
+        method=None,
+        follow_redirects=True,
+        headers=None,
+        json_body=None,
+        raw_body=None,
+    ):
         url = urljoin(f"{BASE_URL}/", path.lstrip("/"))
-        data = urlencode(form).encode("utf-8") if form is not None else None
+        if sum(value is not None for value in (form, json_body, raw_body)) > 1:
+            raise ValueError("Only one request body format may be provided.")
+        if json_body is not None:
+            data = json.dumps(json_body).encode("utf-8")
+        elif raw_body is not None:
+            data = raw_body.encode("utf-8")
+        else:
+            data = urlencode(form).encode("utf-8") if form is not None else None
         request = Request(url, data=data, method=method or ("POST" if data else "GET"))
-        if data is not None:
+        if json_body is not None:
+            request.add_header("Content-Type", "application/json")
+        elif form is not None:
             request.add_header("Content-Type", "application/x-www-form-urlencoded")
         for name, value in (headers or {}).items():
             request.add_header(name, value)

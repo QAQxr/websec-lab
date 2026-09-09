@@ -1,0 +1,138 @@
+# REST Project API
+
+## Phase Status
+
+Phase 2.2c REST project parity is implemented for the normal project CRUD API. The API uses the same active session principal, `ProjectService`, `ProjectPolicy`, repository query scopes, field validation, ownership rules, membership rules, and visibility rules as the HTML workflow.
+
+Membership mutation, ownership transfer, share-token access, CSRF protection, and intentional vulnerability variants remain deferred.
+
+## Endpoints
+
+| Method | Endpoint | Service operation | Success |
+|---|---|---|---|
+| `GET` | `/api/projects` | `ProjectService.list_projects()` | `200` |
+| `POST` | `/api/projects` | `ProjectService.create_project()` | `201` |
+| `GET` | `/api/projects/<project_id>` | `ProjectService.get_project()` | `200` |
+| `PATCH` | `/api/projects/<project_id>` | `ProjectService.update_project()` | `200` |
+| `DELETE` | `/api/projects/<project_id>` | `ProjectService.delete_project()` | `200` |
+
+The REST blueprint does not access `ProjectRepository` directly. The request path is:
+
+```text
+REST route
+  -> ProjectService
+  -> ProjectPolicy
+  -> ProjectRepository scope
+  -> MySQL
+```
+
+## Authentication
+
+The API uses the existing opaque session cookie and `AuthService.authenticate_request()` request loader. Only an active server-side principal reaches the project service. Guest, pending, and locked requests receive:
+
+```json
+{
+  "error": {
+    "code": "unauthenticated",
+    "message": "Authentication is required."
+  }
+}
+```
+
+with status `401`. The API never accepts `user_id`, `owner_id`, membership roles, or global roles from the client.
+
+## Response Contract
+
+Successful responses use a `data` envelope:
+
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "Example",
+    "slug": "example",
+    "description": "...",
+    "visibility": "private"
+  }
+}
+```
+
+List responses contain an array in `data`. Errors use:
+
+```json
+{
+  "error": {
+    "code": "project_not_found",
+    "message": "Project not found."
+  }
+}
+```
+
+The API maps errors as follows:
+
+| Status | Meaning |
+|---:|---|
+| `400` | Invalid content type, JSON, or project fields |
+| `401` | No active authenticated principal |
+| `403` | The principal can see the object but cannot perform the action |
+| `404` | The project is outside the repository scope or does not exist |
+| `409` | Project conflict |
+| `500`/`503` | Generic server or infrastructure failure without internal details |
+
+## Serialization Boundary
+
+Project responses explicitly serialize:
+
+```text
+id, name, slug, description, visibility
+created_at, updated_at
+membership_role, effective_role, global_role
+is_owner, is_global_admin
+can_edit_metadata, can_edit_visibility, can_delete, can_manage_members
+```
+
+They do not expose `owner_id`, `settings_json`, raw `member_role`, the internal `ProjectAccess` object, session data, passwords, or database details. Global admin capability remains separate from project membership.
+
+## Input Contract
+
+Mutation requests require `Content-Type: application/json` and a JSON object. Accepted project fields are `name`, `description`, and `visibility`. Unknown fields, including ownership and role fields, return `400` rather than being assigned.
+
+The service owns validation for both HTML and REST:
+
+```text
+name: required, maximum 160 characters
+description: maximum 10000 characters
+visibility: private, team, or shared
+```
+
+`PATCH` accepts partial project fields and fills omitted values from the authorized current project before calling the existing full update service method. Managers can update only metadata; owners and global admins can update visibility.
+
+## Authorization and Visibility
+
+The API preserves the HTML authorization matrix:
+
+```text
+private: owner, member, or global admin
+team: active users can read; non-members are read-only
+shared: private-like until share-token support exists
+```
+
+Global managers without project membership do not gain project manager capabilities. Global admins can access private projects without a project membership row. Owner mismatch cases remain fail closed for owner-only actions.
+
+List and detail operations use the explicit `none`, `authenticated`, and `global` repository scopes. An authorized project ID is required in addition to knowing the numeric ID, so private objects are not exposed through IDOR-style lookups.
+
+## Verification
+
+`tests/integration/test_project_api.py` covers:
+
+* active authentication and pending/locked rejection
+* create, list, detail, partial update, delete, validation, and slug behavior
+* private, team, and shared visibility
+* viewer, contributor, manager, owner, global manager, and admin capabilities
+* global admin without a membership row
+* private-project IDOR read/update/delete and list filtering
+* owner membership mismatch behavior
+* serialization and mass-assignment boundaries
+* HTML/REST authorization parity
+
+The normal project API does not contain intentional IDOR, role injection, mass-assignment, or privilege-escalation behavior.

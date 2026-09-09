@@ -2,9 +2,9 @@
 
 ## Phase Status
 
-Phase 2.2c finalizes the normal HTML project authorization model. This document describes the policy contract used by the project service, repository query scope, routes, templates, and tests.
+Phase 2.2c finalizes the normal HTML and REST project authorization model. This document describes the policy contract used by the project service, repository query scope, routes, serializers, templates, and tests.
 
-REST project APIs, membership mutation routes, ownership transfer workflows, share-token routes, CSRF protection, and intentional vulnerabilities remain deferred.
+Membership mutation routes, ownership transfer workflows, share-token routes, CSRF protection, and intentional vulnerabilities remain deferred.
 
 ## Authorization Pipeline
 
@@ -107,6 +107,12 @@ The service computes an explicit query scope through `ProjectPolicy.query_scope(
 `ProjectRepository` applies the scope in SQL as defense-in-depth. It does not infer whether a caller is an admin. The service still evaluates the returned object through `ProjectPolicy` before exposing it.
 
 Unauthorized or nonexistent project lookups use the existing indistinguishable 404 behavior where the object is not in the caller's repository scope.
+
+## REST Parity
+
+The REST project blueprint exposes the same list, create, detail, update, and delete workflows as HTML. It calls `ProjectService` only; it does not query the repository or calculate role decisions itself. The service continues to call `ProjectPolicy.access_for()` and supplies the explicit repository scope.
+
+REST mutations accept only project metadata fields and use the service validation and capability boundaries. The JSON serializer keeps global role/capability separate from project membership and excludes internal database fields and the raw policy object. API errors use stable JSON envelopes while retaining the HTML authorization decisions: unauthorized private objects return 404, visible read-only objects return 403 for mutations, and owner/admin capabilities remain unchanged.
 
 ## UI Contract
 

@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2c HTML project CRUD and authorization model finalized locally; REST parity, membership mutation, and later business modules remain deferred
+**Implementation status:** Phase 2.2c HTML and REST project CRUD plus the shared authorization model finalized locally; membership mutation and later business modules remain deferred
 
 ---
 
@@ -494,18 +494,26 @@ The route names below describe real product workflows. Vulnerability names are d
 
 ## C.5 REST API
 
-JSON responses use a common envelope:
+Project JSON responses use a simple envelope:
 
 ```json
 {
-  "success": true,
-  "data": {},
-  "error": null,
-  "request_id": "local-request-id"
+  "data": {}
 }
 ```
 
-Error responses will retain useful HTTP status codes instead of returning `200` for every failure.
+Error responses use an `error` object and retain useful HTTP status codes instead of returning `200` for every failure:
+
+```json
+{
+  "error": {
+    "code": "project_not_found",
+    "message": "Project not found."
+  }
+}
+```
+
+Phase 2.2c implements only the project CRUD endpoints below. Other API entries are planned and remain deferred until their corresponding business module is approved.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -675,7 +683,7 @@ Metadata edit, visibility edit, delete, member management, invitation, role-chan
 
 The repository receives an explicit scope from the service/policy boundary: `none`, `authenticated`, or `global`. It applies owner/member/team/global SQL filtering as defense-in-depth and never infers admin capability itself. HTML edit GET and POST use the same metadata-edit boundary.
 
-Membership mutation, ownership transfer, share-token access, REST parity, CSRF protection, and intentional vulnerabilities remain outside this phase.
+Membership mutation, ownership transfer, share-token access, CSRF protection, and intentional vulnerabilities remain outside this phase. REST project CRUD uses the same `ProjectService`, `ProjectPolicy`, and repository scope as HTML.
 
 ## D.6 Authentication Lifecycle
 
@@ -1220,10 +1228,10 @@ Implement only after explicit approval:
 * Basic HTML project workflow: complete locally.
 * Project ownership, visibility, membership, global-role, field-level capability, and object-scope policy tests: complete locally.
 * Single-source `ProjectPolicy` result consumed by the project service, routes, templates, and repository scope.
-* REST parity: deferred to the next approved increment.
+* REST project parity: complete locally after final verification.
 * Membership mutation and ownership transfer: deferred to Phase 3.
 
-Gate: ordinary authenticated users can complete the primary HTML project workflow, team visibility is read-only for non-members, private/shared objects remain scoped, and GET/POST edit authorization is identical. The REST parity portion remains open.
+Gate: ordinary authenticated users can complete the primary HTML and REST project workflows, team visibility is read-only for non-members, private/shared objects remain scoped, HTML/REST authorization decisions are identical, and API serialization does not expose internal fields.
 
 ## Phase 3: Core Business Modules
 
@@ -1403,7 +1411,7 @@ This design phase is considered stable when:
 * The threat model prevents accidental use against real systems.
 * The roadmap limits each vulnerability increment to two or three issues before verification.
 
-The next implementation step after the finalized Phase 2.2c authorization model is the separately approved REST/membership increment. Phase 2.2c must not introduce intentional vulnerabilities.
+The next implementation step after the finalized Phase 2.2c authorization model and REST project parity is the separately approved membership increment. Phase 2.2c must not introduce intentional vulnerabilities.
 
 ---
 

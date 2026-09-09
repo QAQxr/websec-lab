@@ -12,15 +12,15 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 ## Current Status
 
-**Current phase:** Phase 2.2c HTML project CRUD and authorization model finalized locally
+**Current phase:** Phase 2.2c HTML and REST project CRUD plus shared authorization model finalized locally
 
-**Active work:** No active implementation process. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the finalized Phase 2.2c HTML project authorization workflow loaded.
+**Active work:** No active implementation process. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the Phase 2.2c HTML/REST project workflows loaded.
 
-**Next allowed increment:** REST project parity, membership mutation, and ownership transfer require separate approval
+**Next allowed increment:** Membership mutation, ownership transfer, and share-token behavior require separate approval
 
 **Intentional vulnerabilities:** None implemented
 
-**Working tree:** Contains uncommitted local Phase 2.2c authorization, test, and documentation changes; no commit or push was created in this task.
+**Working tree:** Contains uncommitted local Phase 2.2c REST parity, test, and documentation changes; no commit or push was created in this task.
 
 **Branch:** `main`
 
@@ -30,9 +30,9 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Phase 2.2b closeout fix commit:** `c3b10f0 Fix Phase 2.2b mailbox access and registration consistency`
 
-**Current HEAD before the local Phase 2.2c authorization changes:** `d78c63f`.
+**Current HEAD before the local Phase 2.2c REST parity changes:** `87e8a99`.
 
-**Remote state:** `main` and `origin/main` were synchronized at `d78c63f` before the local Phase 2.2c authorization changes.
+**Remote state:** `main` and `origin/main` were synchronized at `87e8a99` before the local Phase 2.2c REST parity changes.
 
 ## What Has Been Completed
 
@@ -125,7 +125,26 @@ Implemented locally without intentional vulnerabilities:
 
 Deferred by scope:
 
-* REST project adapters.
+* Membership invite, role-change, and removal routes.
+* Ownership transfer.
+* Share-token access.
+* CSRF protection and intentional vulnerability behavior.
+
+### Phase 2.2c REST Project Parity
+
+Implemented locally without intentional vulnerabilities:
+
+* `/api/projects` list and create routes.
+* `/api/projects/<project_id>` detail, PATCH, and DELETE routes.
+* Existing session authentication with 401 responses for guest, pending, and locked principals.
+* Shared `ProjectService`, `ProjectPolicy`, validation, ownership, membership, visibility, and repository scope behavior.
+* Explicit JSON success/error envelopes and status mapping for validation, authentication, authorization, not-found, conflict, and infrastructure failures.
+* Explicit project serialization that separates membership role from global role and excludes internal fields.
+* REST/HTML authorization parity, IDOR regression tests, owner mismatch tests, and mass-assignment tests.
+* REST architecture documentation at `docs/architecture/rest.md`.
+
+Deferred by scope:
+
 * Membership invite, role-change, and removal routes.
 * Ownership transfer.
 * Share-token access.
@@ -234,8 +253,11 @@ The following checks have passed after a reset:
 * Nginx landing page returns AcmeCloud/WebSec Lab HTML.
 * `/health` returns database, Redis, and internal-api status `ok`.
 * Nginx does not expose `/internal/health`.
-* Full unit and integration suite: `52 passed`.
-* Authorization-focused unit and project integration subset: `18 passed`.
+* Full unit and integration suite after REST parity: `69 passed`.
+* REST project API integration and service-delegation suite: `17 passed`.
+* HTML project authorization tests remain green inside the full suite.
+* HTML/REST authorization parity: passed.
+* Project IDOR defense and serialization boundary tests: passed.
 * Phase 2.2a schema/seed assertions remain covered inside the full suite.
 * Mailbox permission and registration compensation tests pass.
 * Direct `schema.sql` replay: two consecutive executions passed.
@@ -249,11 +271,11 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1, Phase 2.2a, Phase 2.2b, and the original Phase 2.2c foundation are saved on GitHub at `d78c63f`; the current authorization finalization remains uncommitted locally.
+* Phase 2.1, Phase 2.2a, Phase 2.2b, and Phase 2.2c authorization finalization are saved on GitHub through `87e8a99`; the current REST parity changes remain uncommitted locally.
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
-* REST project APIs, membership mutation, ownership transfer, share-token access, and CSRF remain deferred.
+* Membership mutation, ownership transfer, share-token access, and CSRF remain deferred.
 * `/dev/mail` intentionally exposes raw verification links only to local/test admins; it is not a real mail service.
 * Registration compensation cannot guarantee recovery from a host-wide MySQL outage during the compensating delete; the route remains a generic 503 and no normal success is reported.
 * No learning mode, challenge mode, audit mode, PoC, patch, or vulnerability test exists yet.
@@ -277,17 +299,17 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 | `31fc67e` | Implemented Phase 2.2b authentication foundation |
 | `c3b10f0` | Fixed Phase 2.2b mailbox access and registration consistency |
 | `d78c63f` | Implemented Phase 2.2c HTML project CRUD foundation |
+| `87e8a99` | Finalized Phase 2.2c authorization model |
 
 ## Next Work
 
-The HTML project CRUD and authorization finalization are complete locally after full verification. The next implementation plan should be reviewed and explicitly approved before adding REST parity or membership mutation.
+The HTML and REST project CRUD plus shared authorization model are complete locally after full verification. The next implementation plan should be reviewed and explicitly approved before adding membership mutation, ownership transfer, or share-token behavior.
 
 Recommended next increment order:
 
-1. Add REST project adapters that reuse the existing project service and policy.
-2. Add separately approved membership invite, role-change, and removal workflows.
-3. Add ownership transfer and share-token behavior only after the corresponding policy and test design is approved.
-4. Re-run the full Phase 2.1, Phase 2.2a, Phase 2.2b, and Phase 2.2c regression suites after each increment.
+1. Add separately approved membership invite, role-change, and removal workflows.
+2. Add ownership transfer and share-token behavior only after the corresponding policy and test design is approved.
+3. Re-run the full Phase 2.1, Phase 2.2a, Phase 2.2b, and Phase 2.2c regression suites after each increment.
 
 Do not introduce vulnerability behavior until the normal business workflow is stable and a separate phase is approved.
 

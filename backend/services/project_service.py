@@ -11,29 +11,31 @@ from backend.utils.time import utc_now
 
 
 class ProjectError(Exception):
-    def __init__(self, message: str, status_code: int = 400):
+    def __init__(self, message: str, status_code: int = 400, code: str = "project_error"):
         super().__init__(message)
         self.message = message
         self.status_code = status_code
+        self.code = code
 
 
 class ProjectNotFoundError(ProjectError):
     def __init__(self):
-        super().__init__("Project not found.", 404)
+        super().__init__("Project not found.", 404, "project_not_found")
 
 
 class ProjectForbiddenError(ProjectError):
     def __init__(self, message: str = "You are not allowed to access this project."):
-        super().__init__(message, 403)
+        super().__init__(message, 403, "forbidden")
 
 
 class ProjectValidationError(ProjectError):
-    pass
+    def __init__(self, message: str):
+        super().__init__(message, 400, "validation_error")
 
 
 class ProjectConflictError(ProjectError):
     def __init__(self, message: str = "That project slug is already in use."):
-        super().__init__(message, 409)
+        super().__init__(message, 409, "project_conflict")
 
 
 class ProjectService:
@@ -151,9 +153,15 @@ class ProjectService:
 
     @classmethod
     def _validate_fields(cls, name: str, description: str, visibility: str):
-        name = (name or "").strip()
-        description = (description or "").strip()
-        visibility = (visibility or "private").strip().lower()
+        if not isinstance(name, str):
+            raise ProjectValidationError("Project name must be a string.")
+        if not isinstance(description, str):
+            raise ProjectValidationError("Project description must be a string.")
+        if not isinstance(visibility, str):
+            raise ProjectValidationError("Project visibility must be a string.")
+        name = name.strip()
+        description = description.strip()
+        visibility = visibility.strip().lower()
         if not name:
             raise ProjectValidationError("Project name is required.")
         if len(name) > cls.NAME_MAX_LENGTH:
