@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title_text }}{% endblock %}
+
+{% block content %}
+<section class="card form">
+    <p class="muted">Project workspace</p>
+    <h1>{{ title_text }}</h1>
+    {% if errors %}
+    <div class="error" role="alert">
+        {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <form method="post">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" maxlength="160" value="{{ values.name }}" required>
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description" maxlength="10000">{{ values.description }}</textarea>
+
+        <label for="visibility">Visibility</label>
+        <select id="visibility" name="visibility">
+            {% for option in visibility_options %}
+            <option value="{{ option }}"{% if values.visibility == option %} selected{% endif %}>{{ option|capitalize }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="actions">
+            <button class="primary" type="submit">Save project</button>
+            {% if project %}
+            <a class="secondary" href="{{ url_for('projects.detail', project_id=project.id) }}">Cancel</a>
+            {% else %}
+            <a class="secondary" href="{{ url_for('projects.index') }}">Cancel</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+{% endblock %}

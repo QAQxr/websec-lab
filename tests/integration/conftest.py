@@ -16,6 +16,7 @@ def _cleanup_test_state():
     )
     try:
         with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM projects WHERE id > 5")
             cursor.execute("DELETE FROM users WHERE id > 5")
         connection.commit()
     finally:

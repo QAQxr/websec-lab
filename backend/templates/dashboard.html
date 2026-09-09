@@ -7,6 +7,7 @@
     <p class="muted">AcmeCloud workspace</p>
     <h1>Welcome, {{ user.username }}</h1>
     <p>You are signed in as <strong>{{ user.role }}</strong>.</p>
-    <p>Authentication foundation is active. Project workflows will be added in a later phase.</p>
+    <p>Manage the workspaces available to your account.</p>
+    <p><a class="secondary" href="{{ url_for('projects.index') }}">View projects</a></p>
 </section>
 {% endblock %}

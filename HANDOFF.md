@@ -4,7 +4,7 @@
 
 This is the current handoff and status document for WebSec Lab. Update it after every phase, design correction, verification run, or known-issue change.
 
-**Last updated:** 2026-09-07
+**Last updated:** 2026-09-08
 
 **Project path:** `~/opencode/projects/websec-lab`
 
@@ -12,15 +12,15 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 ## Current Status
 
-**Current phase:** Phase 2.2b complete
+**Current phase:** Phase 2.2c HTML project CRUD foundation complete locally
 
-**Active work:** None. The Phase 2.1 Docker stack is currently running with the Phase 2.2a schema/seed and Phase 2.2b authentication foundation loaded.
+**Active work:** No active implementation process. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and local Phase 2.2c HTML project workflow loaded.
 
-**Next allowed phase:** Phase 2.2c, only after explicit approval
+**Next allowed increment:** REST project parity, membership mutation, and ownership transfer require separate approval
 
 **Intentional vulnerabilities:** None implemented
 
-**Working tree:** Clean at the last handoff verification; update this line if new uncommitted work appears.
+**Working tree:** Contains uncommitted local Phase 2.2c implementation changes; no commit or push was created in this task.
 
 **Branch:** `main`
 
@@ -30,9 +30,9 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Phase 2.2b closeout fix commit:** `c3b10f0 Fix Phase 2.2b mailbox access and registration consistency`
 
-**Current HEAD at the latest functional verification:** `c3b10f0`.
+**Current HEAD before the local Phase 2.2c changes:** `55c9067`.
 
-**Remote state:** Phase 2.2a, Phase 2.2b, and the closeout fix are synchronized with `origin/main` through `f84f033`.
+**Remote state:** `main` and `origin/main` were synchronized at `55c9067` before the local Phase 2.2c changes.
 
 ## What Has Been Completed
 
@@ -106,6 +106,25 @@ Implemented locally and awaiting the closeout commit:
 * Registration creates the pending user and verification record in one MySQL transaction.
 * Redis mailbox failure triggers mailbox cleanup and compensating deletion of the new verification/user state.
 * Mailbox permission and registration failure-injection integration tests cover success, unauthorized access, admin access, production-like disablement, and recovery.
+
+### Phase 2.2c HTML Project CRUD Foundation
+
+Implemented locally without intentional vulnerabilities:
+
+* Authenticated project list and create/detail/edit/delete HTML workflows.
+* `ProjectPolicy` separating global admin access from project membership roles.
+* Owner, manager, viewer, contributor-read, and non-member authorization boundaries.
+* Owner membership creation in the same transaction as project creation.
+* Parameterized project queries with membership-filtered list/detail access.
+* Stable slug generation with collision suffixes; slugs remain stable during edits.
+* Project policy unit tests and MySQL/Redis-backed integration tests.
+
+Deferred by scope:
+
+* REST project adapters.
+* Membership invite, role-change, and removal routes.
+* Ownership transfer.
+* CSRF protection and intentional vulnerability behavior.
 
 ## Runtime Topology
 
@@ -210,7 +229,7 @@ The following checks have passed after a reset:
 * Nginx landing page returns AcmeCloud/WebSec Lab HTML.
 * `/health` returns database, Redis, and internal-api status `ok`.
 * Nginx does not expose `/internal/health`.
-* Full unit and integration suite: `34 passed`.
+* Full unit and integration suite: `43 passed`.
 * Phase 2.2a schema/seed assertions remain covered inside the full suite.
 * Mailbox permission and registration compensation tests pass.
 * Direct `schema.sql` replay: two consecutive executions passed.
@@ -218,6 +237,7 @@ The following checks have passed after a reset:
 * Direct host TCP access to the actual MySQL, Redis, and internal-api container IPs is blocked.
 * Web container cannot fetch `http://example.com`.
 * Reset recreates the database bootstrap state and passes the same checks.
+* Two full volume resets produced identical deterministic seed snapshots.
 
 The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose project does not publish MySQL; the verification script reports this external listener without treating it as the lab service.
 
@@ -227,7 +247,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
-* Project CRUD and REST business APIs do not exist yet; they are deferred to Phase 2.2c.
+* REST project APIs, membership mutation, and ownership transfer remain deferred.
 * `/dev/mail` intentionally exposes raw verification links only to local/test admins; it is not a real mail service.
 * Registration compensation cannot guarantee recovery from a host-wide MySQL outage during the compensating delete; the route remains a generic 503 and no normal success is reported.
 * No learning mode, challenge mode, audit mode, PoC, patch, or vulnerability test exists yet.
@@ -253,14 +273,13 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Next Work
 
-Do not start Phase 2.2c automatically. The next implementation plan should be reviewed and explicitly approved first.
+The HTML project CRUD foundation is complete locally. The next implementation plan should be reviewed and explicitly approved before adding REST parity or membership mutation.
 
 Recommended Phase 2.2c order:
 
-1. Add project list/create/detail/edit/delete workflows without intentional vulnerabilities.
-2. Add project ownership and membership policy tests.
-3. Add basic HTML/API parity only for approved project workflows.
-4. Re-run the full Phase 2.1, Phase 2.2a, and Phase 2.2b regression suites after each increment.
+1. Add REST project adapters that reuse the existing project service and policy.
+2. Add approved membership invite, role-change, and removal workflows.
+3. Re-run the full Phase 2.1, Phase 2.2a, Phase 2.2b, and Phase 2.2c regression suites after each increment.
 
 Do not introduce vulnerability behavior until the normal business workflow is stable and a separate phase is approved.
 

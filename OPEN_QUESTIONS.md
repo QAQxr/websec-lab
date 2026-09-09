@@ -2,7 +2,9 @@
 
 **Phase 2.2a:** complete
 
-**Phase 2.2b:** complete locally after final verification.
+**Phase 2.2b:** complete after final verification.
+
+**Phase 2.2c HTML foundation:** complete locally after final verification.
 
 **Open Questions:** resolved for this phase.
 
@@ -13,19 +15,19 @@ Phase 2.2a closeout decisions:
 * The external host listener on `127.0.0.1:3306` was not stopped, restarted, or modified. WebSec Lab MySQL has no `ports` mapping.
 * The Phase 2.2a baseline and schema idempotency fix were verified and pushed.
 * Phase 2.2b implementation commit: `31fc67e Implement Phase 2.2b authentication foundation`.
-* Current functional verification HEAD: `31fc67e`.
 * Phase 2.2b closeout fix commit: `c3b10f0 Fix Phase 2.2b mailbox access and registration consistency`.
-* Current functional verification HEAD: `c3b10f0`.
-* The closeout fix is verified and pushed; local `main` and `origin/main` are synchronized through `f84f033`.
-* Phase 2.2c is deferred and must be separately approved.
+* Actual repository HEAD before local Phase 2.2c edits: `55c9067`.
+* Local `main` and `origin/main` were synchronized at `55c9067` before these uncommitted edits.
+* Phase 2.2c HTML CRUD is implemented locally; REST parity, membership mutation, and ownership transfer remain deferred.
 
 Verification:
 
 * Phase 2.2a baseline and Phase 2.2b authentication tests pass.
-* Full unit and integration suite: `34 passed`.
+* Full unit and integration suite: `43 passed`.
 * `/dev/mail` permission tests and registration compensation tests pass.
 * `schema.sql` executed twice consecutively without errors.
 * determinism verification passed.
 * Phase 2.1 regression passed.
+* Two full volume resets produced identical deterministic seed snapshots.
 
-There are no unresolved Phase 2.2a or Phase 2.2b operational questions.
+There are no unresolved Phase 2.2a or Phase 2.2b operational questions. The next approved design increment is REST parity and later membership mutation.

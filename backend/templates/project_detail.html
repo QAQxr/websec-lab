@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<section class="card">
+    <p class="muted">{{ project.visibility }} · {{ project.member_role }}</p>
+    <h1>{{ project.name }}</h1>
+    <p>{{ project.description or 'No description yet.' }}</p>
+    <dl>
+        <dt>Slug</dt><dd><code>{{ project.slug }}</code></dd>
+        <dt>Created</dt><dd>{{ project.created_at }}</dd>
+        <dt>Updated</dt><dd>{{ project.updated_at }}</dd>
+    </dl>
+    <div class="actions">
+        {% if project.can_edit %}
+        <a class="secondary" href="{{ url_for('projects.edit', project_id=project.id) }}">Edit project</a>
+        {% endif %}
+        {% if project.can_delete %}
+        <form action="{{ url_for('projects.delete', project_id=project.id) }}" method="post">
+            <button class="danger" type="submit">Delete project</button>
+        </form>
+        {% endif %}
+        <a class="secondary" href="{{ url_for('projects.index') }}">Back to projects</a>
+    </div>
+</section>
+{% endblock %}

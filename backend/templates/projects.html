@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Projects{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="actions">
+        <div>
+            <p class="muted">AcmeCloud workspaces</p>
+            <h1>Projects</h1>
+        </div>
+        <a class="secondary" href="{{ url_for('projects.new') }}">Create project</a>
+    </div>
+</section>
+
+{% if projects %}
+<section class="project-list">
+    {% for project in projects %}
+    <article class="card">
+        <p class="muted">{{ project.visibility }} · {{ project.member_role }}</p>
+        <h2><a href="{{ url_for('projects.detail', project_id=project.id) }}">{{ project.name }}</a></h2>
+        <p>{{ project.description or 'No description yet.' }}</p>
+        <p class="muted">/{{ project.slug }}</p>
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<section class="card">
+    <p>No projects are available yet.</p>
+</section>
+{% endif %}
+{% endblock %}

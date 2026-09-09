@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2b authentication foundation complete; Project CRUD and later business modules have not started
+**Implementation status:** Phase 2.2c HTML project CRUD foundation complete locally; REST parity, membership mutation, and later business modules remain deferred
 
 ---
 
@@ -1179,15 +1179,17 @@ Tests:
 
 Gate: registration, verification, login, logout, session rotation/expiry, profile, dashboard, Phase 2.1 regression, and Phase 2.2a regression pass without intentional vulnerability behavior.
 
-### Phase 2.2c: Core Application (future)
+### Phase 2.2c: Core Application (HTML foundation complete locally)
 
 Implement only after explicit approval:
 
-* Dashboard project list and project create/list/detail/edit/delete.
-* Basic HTML and API parity for project workflows.
-* Project ownership and membership policy tests.
+* Dashboard project list and project create/list/detail/edit/delete: complete locally.
+* Basic HTML project workflow: complete locally.
+* Project ownership and membership policy tests: complete locally.
+* REST parity: deferred to the next approved increment.
+* Membership mutation and ownership transfer: deferred to Phase 3.
 
-Gate: ordinary authenticated users can complete the primary project workflow without lab-specific instructions.
+Gate: ordinary authenticated users can complete the primary HTML project workflow without lab-specific instructions. The REST parity portion remains open.
 
 ## Phase 3: Core Business Modules
 
