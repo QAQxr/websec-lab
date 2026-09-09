@@ -107,7 +107,19 @@ def test_manager_can_edit_but_viewer_cannot_edit_or_delete():
         form={"name": "Manager Updated", "description": "Manager edit.", "visibility": "shared"},
         follow_redirects=False,
     )
+    assert response.status == 403
+
+    response = manager_browser.request(
+        f"/project/{project_id}/edit",
+        form={"name": "Manager Updated", "description": "Manager edit.", "visibility": "private"},
+        follow_redirects=False,
+    )
     assert response.status == 302
+
+    assert manager_browser.request(f"/project/{project_id}/edit").status == 200
+
+    response = viewer_browser.request(f"/project/{project_id}/edit", follow_redirects=False)
+    assert response.status == 403
 
     response = viewer_browser.request(
         f"/project/{project_id}/edit",
@@ -122,6 +134,130 @@ def test_manager_can_edit_but_viewer_cannot_edit_or_delete():
 
     assert manager_browser.request(f"/project/{project_id}").status == 200
     assert viewer_browser.request(f"/project/{project_id}").status == 200
+
+
+def test_team_project_is_readable_to_active_non_member_but_not_editable():
+    owner_browser = Browser()
+    active_account(owner_browser)
+    location = create_project(owner_browser, name="Team Workspace", visibility="team")
+    project_id = int(location.rstrip("/").rsplit("/", 1)[-1])
+
+    reader_browser = Browser()
+    active_account(reader_browser)
+
+    listing = reader_browser.request("/projects")
+    assert listing.status == 200
+    assert "Team Workspace" in listing.body
+    assert "Team read-only" in listing.body
+
+    assert reader_browser.request(f"/project/{project_id}").status == 200
+    assert reader_browser.request(f"/project/{project_id}/edit", follow_redirects=False).status == 403
+    assert reader_browser.request(
+        f"/project/{project_id}/edit",
+        form={"name": "Changed", "description": "Nope", "visibility": "team"},
+        follow_redirects=False,
+    ).status == 403
+    assert reader_browser.request(
+        f"/project/{project_id}/delete",
+        method="POST",
+        follow_redirects=False,
+    ).status == 403
+
+
+def test_global_manager_without_membership_can_read_team_project_only():
+    owner_browser = Browser()
+    active_account(owner_browser)
+    location = create_project(owner_browser, name="Manager Team Workspace", visibility="team")
+    project_id = int(location.rstrip("/").rsplit("/", 1)[-1])
+
+    manager_browser = Browser()
+    active_account(manager_browser, role="manager")
+
+    assert manager_browser.request(f"/project/{project_id}").status == 200
+    assert manager_browser.request(f"/project/{project_id}/edit", follow_redirects=False).status == 403
+    assert manager_browser.request(
+        f"/project/{project_id}/delete",
+        method="POST",
+        follow_redirects=False,
+    ).status == 403
+
+
+def test_shared_project_is_private_like_without_a_share_token():
+    owner_browser = Browser()
+    active_account(owner_browser)
+    location = create_project(owner_browser, name="Shared Workspace", visibility="shared")
+    project_id = int(location.rstrip("/").rsplit("/", 1)[-1])
+
+    reader_browser = Browser()
+    active_account(reader_browser)
+
+    assert reader_browser.request("/projects").status == 200
+    assert "Shared Workspace" not in reader_browser.request("/projects").body
+    assert reader_browser.request(f"/project/{project_id}").status == 404
+    assert reader_browser.request(f"/project/{project_id}/edit").status == 404
+    assert reader_browser.request(
+        f"/project/{project_id}/delete",
+        method="POST",
+        follow_redirects=False,
+    ).status == 404
+
+
+def test_global_admin_can_access_without_membership_row():
+    owner_browser = Browser()
+    active_account(owner_browser)
+    location = create_project(owner_browser, name="Admin Workspace", visibility="private")
+    project_id = int(location.rstrip("/").rsplit("/", 1)[-1])
+
+    admin_browser = Browser()
+    admin = active_account(admin_browser, role="admin")
+    assert db_query(
+        "SELECT project_id FROM project_members WHERE project_id = %s AND user_id = %s",
+        (project_id, user_id(admin)),
+    ) == ()
+
+    detail = admin_browser.request(f"/project/{project_id}")
+    assert detail.status == 200
+    assert "Global admin" in detail.body
+    assert "Project membership" in detail.body
+    assert "None" in detail.body
+    assert admin_browser.request(f"/project/{project_id}/edit").status == 200
+
+    response = admin_browser.request(
+        f"/project/{project_id}/delete",
+        method="POST",
+        follow_redirects=False,
+    )
+    assert response.status == 302
+
+
+def test_owner_role_mismatch_does_not_grant_owner_capabilities():
+    owner_browser = Browser()
+    owner = active_account(owner_browser)
+    location = create_project(owner_browser, name="Ownership Invariant", visibility="private")
+    project_id = int(location.rstrip("/").rsplit("/", 1)[-1])
+
+    mismatched_browser = Browser()
+    mismatched = active_account(mismatched_browser)
+    db_execute(
+        """
+        INSERT INTO project_members (project_id, user_id, member_role, invited_by, created_at)
+        VALUES (%s, %s, 'owner', %s, UTC_TIMESTAMP(6))
+        """,
+        (project_id, user_id(mismatched), user_id(owner)),
+    )
+
+    assert mismatched_browser.request(f"/project/{project_id}").status == 200
+    assert mismatched_browser.request(f"/project/{project_id}/edit", follow_redirects=False).status == 403
+    assert mismatched_browser.request(
+        f"/project/{project_id}/edit",
+        form={"name": "Mismatch", "description": "Nope", "visibility": "private"},
+        follow_redirects=False,
+    ).status == 403
+    assert mismatched_browser.request(
+        f"/project/{project_id}/delete",
+        method="POST",
+        follow_redirects=False,
+    ).status == 403
 
 
 def test_non_member_cannot_view_project_and_global_manager_is_not_project_manager():

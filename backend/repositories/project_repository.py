@@ -41,11 +41,13 @@ class ProjectRepository:
             cursorclass=pymysql.cursors.DictCursor,
         )
 
-    def list_for_user(self, user_id: int, is_admin: bool = False) -> list[dict]:
+    def list_for_user(self, user_id: int, scope: str) -> list[dict]:
+        if scope == "none":
+            return []
         connection = self._connection()
         try:
             with connection.cursor() as cursor:
-                if is_admin:
+                if scope == "global":
                     cursor.execute(
                         f"""
                         SELECT {PROJECT_FIELDS}
@@ -56,7 +58,7 @@ class ProjectRepository:
                         """,
                         (user_id,),
                     )
-                else:
+                elif scope == "authenticated":
                     cursor.execute(
                         f"""
                         SELECT {PROJECT_FIELDS}
@@ -64,19 +66,24 @@ class ProjectRepository:
                         LEFT JOIN project_members AS pm
                             ON pm.project_id = p.id AND pm.user_id = %s
                         WHERE p.owner_id = %s OR pm.user_id = %s
+                           OR p.visibility = 'team'
                         ORDER BY p.updated_at DESC, p.id DESC
                         """,
                         (user_id, user_id, user_id),
                     )
+                else:
+                    raise ValueError(f"Unknown project query scope: {scope}")
                 return list(cursor.fetchall())
         finally:
             connection.close()
 
-    def find_for_user(self, project_id: int, user_id: int, is_admin: bool = False):
+    def find_for_user(self, project_id: int, user_id: int, scope: str):
+        if scope == "none":
+            return None
         connection = self._connection()
         try:
             with connection.cursor() as cursor:
-                if is_admin:
+                if scope == "global":
                     cursor.execute(
                         f"""
                         SELECT {PROJECT_FIELDS}
@@ -87,7 +94,7 @@ class ProjectRepository:
                         """,
                         (user_id, project_id),
                     )
-                else:
+                elif scope == "authenticated":
                     cursor.execute(
                         f"""
                         SELECT {PROJECT_FIELDS}
@@ -95,10 +102,16 @@ class ProjectRepository:
                         LEFT JOIN project_members AS pm
                             ON pm.project_id = p.id AND pm.user_id = %s
                         WHERE p.id = %s
-                          AND (p.owner_id = %s OR pm.user_id = %s)
+                          AND (
+                              p.owner_id = %s
+                              OR pm.user_id = %s
+                              OR p.visibility = 'team'
+                          )
                         """,
                         (user_id, project_id, user_id, user_id),
                     )
+                else:
+                    raise ValueError(f"Unknown project query scope: {scope}")
                 return cursor.fetchone()
         finally:
             connection.close()

@@ -2,7 +2,7 @@
 
 ## Phase Status
 
-Phase 2.2b implements the normal AcmeCloud authentication foundation. It does not include Project CRUD, REST business APIs, or any intentional vulnerability.
+Phase 2.2b implements the normal AcmeCloud authentication foundation. Phase 2.2c now consumes its active-session principal for the finalized HTML project authorization model. REST business APIs and intentional vulnerabilities remain deferred.
 
 ## Request Path
 
@@ -95,4 +95,4 @@ Implemented routes:
 * `GET /profile`
 * `GET /dashboard`
 
-Project CRUD, REST APIs, password reset, and all intentional vulnerability variants remain deferred to later phases.
+HTML project CRUD and its authorization model are implemented in Phase 2.2c. REST APIs, membership mutation, ownership transfer, share-token access, password reset, CSRF protection, and all intentional vulnerability variants remain deferred to later phases.

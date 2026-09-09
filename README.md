@@ -29,7 +29,7 @@ docker compose --profile test run --rm test-runner
 
 Integration and schema tests run against the Compose MySQL 8.4 service. SQLite is reserved for pure unit tests.
 
-The Phase 2.2a fixture contains fake local-only users, projects, memberships, files, messages, comments, notifications, API keys, audit logs, and system settings. Authenticated users can now access the HTML project list/create/detail/edit/delete workflow through the shared project policy, service, and repository layers.
+The Phase 2.2a fixture contains fake local-only users, projects, memberships, files, messages, comments, notifications, API keys, audit logs, and system settings. Authenticated users can now access the HTML project list/create/detail/edit/delete workflow through the shared project policy, service, and repository layers. Phase 2.2c finalizes active authentication, global admin capability, project membership, ownership, visibility, field-level edit, and object-scope boundaries.
 
 ## Authentication Foundation
 
@@ -39,7 +39,7 @@ Open `http://127.0.0.1:8080/register` to create a local account. New accounts ar
 
 Authentication uses MySQL for users, verification records, and session audit rows, and Redis for active session state. The cookie contains only an opaque session identifier and is HttpOnly with SameSite=Lax. Local HTTP defaults to `Secure=false`; HTTPS-like deployments should set `SESSION_COOKIE_SECURE=true`.
 
-The current phase does not include REST business APIs, membership mutation routes, ownership transfer, password reset, CSRF protection, or intentional vulnerabilities.
+The current phase does not include REST business APIs, membership mutation routes, ownership transfer, share-token routes, password reset, CSRF protection, or intentional vulnerabilities.
 
 ## Reset
 

@@ -17,7 +17,20 @@
 <section class="project-list">
     {% for project in projects %}
     <article class="card">
-        <p class="muted">{{ project.visibility }} · {{ project.member_role }}</p>
+        <p class="muted">
+            {{ project.visibility }} ·
+            {% if project.is_global_admin %}
+                Global admin{% if project.is_owner %} · Owner{% endif %}
+            {% elif project.is_owner %}
+                Owner
+            {% elif project.effective_role %}
+                {{ project.effective_role|capitalize }} member
+            {% elif project.membership_role %}
+                Member · read-only
+            {% else %}
+                Team read-only
+            {% endif %}
+        </p>
         <h2><a href="{{ url_for('projects.detail', project_id=project.id) }}">{{ project.name }}</a></h2>
         <p>{{ project.description or 'No description yet.' }}</p>
         <p class="muted">/{{ project.slug }}</p>

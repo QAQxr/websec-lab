@@ -51,7 +51,10 @@ def create_projects_blueprint(project_service: ProjectService):
         if g.current_user is None:
             return redirect(url_for("auth.login"))
         try:
-            project = project_service.get_project(g.current_user, project_id)
+            if request.method == "GET":
+                project = project_service.get_project_for_edit(g.current_user, project_id)
+            else:
+                project = project_service.get_project(g.current_user, project_id)
         except ProjectError as error:
             return _error_response(error)
 
@@ -100,6 +103,7 @@ def _project_form_response(title, values, errors, status_code=200, project=None)
             errors=errors,
             project=project,
             visibility_options=("private", "team", "shared"),
+            can_edit_visibility=project is None or project.get("can_edit_visibility", False),
         ),
         status_code,
     )

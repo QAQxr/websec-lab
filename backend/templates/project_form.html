@@ -11,6 +11,9 @@
         {% for error in errors %}<p>{{ error }}</p>{% endfor %}
     </div>
     {% endif %}
+    {% if project and not can_edit_visibility %}
+    <p class="muted">Managers can edit project metadata, but only the owner or a global admin can change visibility.</p>
+    {% endif %}
     <form method="post">
         <label for="name">Name</label>
         <input id="name" name="name" type="text" maxlength="160" value="{{ values.name }}" required>

@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2c HTML project CRUD foundation complete locally; REST parity, membership mutation, and later business modules remain deferred
+**Implementation status:** Phase 2.2c HTML project CRUD and authorization model finalized locally; REST parity, membership mutation, and later business modules remain deferred
 
 ---
 
@@ -462,7 +462,7 @@ The route names below describe real product workflows. Vulnerability names are d
 |---|---|---|---|
 | `GET` | `/projects` | List visible projects | User |
 | `GET, POST` | `/projects/new` | Create project | User |
-| `GET` | `/project/<project_id>` | Project dashboard | Member or intended public visibility |
+| `GET` | `/project/<project_id>` | Project dashboard | Owner/member/admin; active users read `team` projects |
 | `GET, POST` | `/project/<project_id>/edit` | Edit project details | Owner/manager |
 | `POST` | `/project/<project_id>/delete` | Delete project | Owner/admin |
 | `GET` | `/project/<project_id>/members` | Member list | Member/manager |
@@ -605,7 +605,9 @@ Examples:
 
 ```text
 can_view_project(user, project)
-can_edit_project(user, project)
+can_edit_metadata(user, project)
+can_edit_visibility(user, project)
+can_delete_project(user, project)
 can_manage_member(user, project, target_user)
 can_read_file(user, file)
 can_read_message(user, message)
@@ -644,7 +646,38 @@ The vulnerable variant will introduce faults in separate business paths rather t
 
 Each fault will have a single source location, a verification test, and a final patched implementation. The rest of the permission layer remains correct so learners must understand the difference.
 
-## D.5 Authentication Lifecycle
+## D.5 Phase 2.2c Authorization Finalization
+
+Phase 2.2c uses the following authorization pipeline:
+
+```text
+active authentication
+  -> global capability
+  -> project owner / membership
+  -> visibility
+  -> action-specific policy
+  -> repository object scope
+```
+
+`ProjectPolicy.access_for()` is the single authorization truth source. It returns structured `ProjectAccess` data for authentication state, global role, membership role, owner/admin flags, visibility, and action capabilities. `ProjectService` does not recalculate effective roles.
+
+Authentication is fail-closed: only `users.status = 'active'` reaches project policy evaluation. Global `admin` is a capability separate from `project_members.member_role`; an admin does not need a membership row. A global `manager` without project membership is not a project manager.
+
+`projects.owner_id` is the ownership source of truth. An owner membership row is a database invariant, not an independent authority. If a membership says `owner` while `owner_id` points to another user, owner-only actions fail closed.
+
+Visibility semantics are:
+
+* `private`: owner, member, or global admin.
+* `team`: any active authenticated user can read; non-members remain read-only.
+* `shared`: no public route in this phase; non-members receive the same private-like denial.
+
+Metadata edit, visibility edit, delete, member management, invitation, role-change, removal, and future ownership capabilities are separate policy fields. Managers may edit only `name` and `description`; only owners and global admins may change visibility.
+
+The repository receives an explicit scope from the service/policy boundary: `none`, `authenticated`, or `global`. It applies owner/member/team/global SQL filtering as defense-in-depth and never infers admin capability itself. HTML edit GET and POST use the same metadata-edit boundary.
+
+Membership mutation, ownership transfer, share-token access, REST parity, CSRF protection, and intentional vulnerabilities remain outside this phase.
+
+## D.6 Authentication Lifecycle
 
 The intended lifecycle is:
 
@@ -1179,17 +1212,18 @@ Tests:
 
 Gate: registration, verification, login, logout, session rotation/expiry, profile, dashboard, Phase 2.1 regression, and Phase 2.2a regression pass without intentional vulnerability behavior.
 
-### Phase 2.2c: Core Application (HTML foundation complete locally)
+### Phase 2.2c: Core Application and Authorization (complete locally)
 
 Implement only after explicit approval:
 
 * Dashboard project list and project create/list/detail/edit/delete: complete locally.
 * Basic HTML project workflow: complete locally.
-* Project ownership and membership policy tests: complete locally.
+* Project ownership, visibility, membership, global-role, field-level capability, and object-scope policy tests: complete locally.
+* Single-source `ProjectPolicy` result consumed by the project service, routes, templates, and repository scope.
 * REST parity: deferred to the next approved increment.
 * Membership mutation and ownership transfer: deferred to Phase 3.
 
-Gate: ordinary authenticated users can complete the primary HTML project workflow without lab-specific instructions. The REST parity portion remains open.
+Gate: ordinary authenticated users can complete the primary HTML project workflow, team visibility is read-only for non-members, private/shared objects remain scoped, and GET/POST edit authorization is identical. The REST parity portion remains open.
 
 ## Phase 3: Core Business Modules
 
@@ -1369,7 +1403,7 @@ This design phase is considered stable when:
 * The threat model prevents accidental use against real systems.
 * The roadmap limits each vulnerability increment to two or three issues before verification.
 
-The next implementation step is Phase 2.2c: core project workflows, only after explicit approval. Phase 2.2c must not introduce intentional vulnerabilities.
+The next implementation step after the finalized Phase 2.2c authorization model is the separately approved REST/membership increment. Phase 2.2c must not introduce intentional vulnerabilities.
 
 ---
 

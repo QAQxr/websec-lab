@@ -83,4 +83,6 @@ Seed passwords are fake local-only fixtures. Only password hashes are stored in 
 
 ## Repository Boundary
 
-The current `LabRepository` reads schema/fixture data for tests and deterministic snapshots. It does not contain authorization decisions. Future routes should call services, services should call policy decisions where needed, and repositories should remain limited to persistence.
+The current `LabRepository` reads schema/fixture data for tests and deterministic snapshots. It does not contain authorization decisions. Project routes call `ProjectService`, which consumes `ProjectPolicy.access_for()` and `ProjectPolicy.query_scope()` before `ProjectRepository` performs object-scoped SQL. The repository applies owner/member/team/global query scope as defense-in-depth and never infers global roles itself.
+
+`projects.owner_id` is the ownership source of truth. The matching `project_members` owner row is an invariant and is not an independent source of owner capability. A mismatched owner membership fails closed for owner-only actions.

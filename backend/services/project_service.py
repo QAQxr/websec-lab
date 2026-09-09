@@ -54,24 +54,32 @@ class ProjectService:
 
     def list_projects(self, principal) -> list[dict]:
         self._require_principal(principal)
+        scope = self.policy.query_scope(principal)
         rows = self.repository.list_for_user(
             principal["id"],
-            is_admin=principal["role"] == "admin",
+            scope=scope,
         )
         return [self._decorate(row, principal) for row in rows]
 
     def get_project(self, principal, project_id: int) -> dict:
         self._require_principal(principal)
+        scope = self.policy.query_scope(principal)
         row = self.repository.find_for_user(
             self._project_id(project_id),
             principal["id"],
-            is_admin=principal["role"] == "admin",
+            scope=scope,
         )
         if row is None:
             raise ProjectNotFoundError()
         project = self._decorate(row, principal)
-        if not self.policy.can_view(principal, project):
+        if not project["access"].can_view:
             raise ProjectNotFoundError()
+        return project
+
+    def get_project_for_edit(self, principal, project_id: int) -> dict:
+        project = self.get_project(principal, project_id)
+        if not project["access"].can_edit_metadata:
+            raise ProjectForbiddenError("You are not allowed to edit this project.")
         return project
 
     def create_project(self, principal, name: str, description: str, visibility: str) -> dict:
@@ -106,9 +114,12 @@ class ProjectService:
         visibility: str,
     ) -> dict:
         project = self.get_project(principal, project_id)
-        if not self.policy.can_edit(principal, project):
+        access = project["access"]
+        if not access.can_edit_metadata:
             raise ProjectForbiddenError("You are not allowed to edit this project.")
         name, description, visibility = self._validate_fields(name, description, visibility)
+        if visibility != project["visibility"] and not access.can_edit_visibility:
+            raise ProjectForbiddenError("You are not allowed to change project visibility.")
         self.repository.update(
             project["id"],
             name,
@@ -120,12 +131,12 @@ class ProjectService:
 
     def delete_project(self, principal, project_id: int) -> None:
         project = self.get_project(principal, project_id)
-        if not self.policy.can_delete(principal, project):
+        if not project["access"].can_delete:
             raise ProjectForbiddenError("Only the project owner or an administrator can delete it.")
         self.repository.delete(project["id"])
 
     def _require_principal(self, principal) -> None:
-        if not self.policy._is_active(principal):
+        if self.policy.query_scope(principal) == self.policy.QUERY_NONE:
             raise ProjectForbiddenError("You must be signed in to access projects.")
 
     @staticmethod
@@ -172,19 +183,20 @@ class ProjectService:
         settings = project.get("settings_json")
         if isinstance(settings, str):
             project["settings_json"] = settings
-        role = self._effective_role(project, principal)
-        project["member_role"] = role
-        project["can_edit"] = self.policy.can_edit(principal, project)
-        project["can_delete"] = self.policy.can_delete(principal, project)
+        access = self.policy.access_for(principal, project)
+        project["access"] = access
+        project["membership_role"] = access.membership_role
+        project["member_role"] = access.membership_role
+        project["effective_role"] = access.effective_role
+        project["global_role"] = access.global_role
+        project["is_owner"] = access.is_owner
+        project["is_global_admin"] = access.is_global_admin
+        project["can_view"] = access.can_view
+        project["can_edit_metadata"] = access.can_edit_metadata
+        project["can_edit_visibility"] = access.can_edit_visibility
+        project["can_delete"] = access.can_delete
+        project["can_manage_members"] = access.can_manage_members
         return project
-
-    @staticmethod
-    def _effective_role(project: dict, principal) -> str | None:
-        if principal["role"] == "admin":
-            return "admin"
-        if principal["id"] == project["owner_id"]:
-            return "owner"
-        return project.get("member_role")
 
 
 def build_project_service(settings: Settings) -> ProjectService:
