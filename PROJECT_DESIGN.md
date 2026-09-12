@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2e HTML and REST ownership transfer finalized locally; file/share access and later business modules remain deferred
+**Implementation status:** Phase 2.2e HTML and REST ownership transfer finalized and pushed; file/share access and later business modules remain deferred
 
 ---
 
@@ -1247,7 +1247,7 @@ Implement only after explicit approval:
 
 Gate: normal roles can be managed according to the target-aware matrix, owner assignment/demotion/removal is impossible, duplicate races map to `409`, private/team scope remains fail-closed, full regression passes, and no intentional vulnerability behavior is introduced.
 
-### Phase 2.2e: Ownership Transfer (complete locally)
+### Phase 2.2e: Ownership Transfer (complete and pushed)
 
 Implement only after explicit approval:
 

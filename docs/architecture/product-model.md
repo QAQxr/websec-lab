@@ -352,7 +352,7 @@ Knowing a project ID, file ID, folder ID, or share token must not bypass the app
 
 This roadmap is design guidance only. No item below is implemented by this document.
 
-### 2.2e Ownership Transfer (complete locally)
+### 2.2e Ownership Transfer (complete and pushed)
 
 Implemented as an explicit owner-only/global-admin workflow that atomically updates `projects.owner_id` and the unique owner membership invariant. The old owner becomes a manager, the active existing member target becomes owner, and the HTML/REST action uses one locked transaction with rollback.
 
