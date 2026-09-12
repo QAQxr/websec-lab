@@ -157,3 +157,157 @@ def test_repository_scope_is_explicitly_derived_by_policy():
     assert ProjectPolicy.query_scope(principal()) == ProjectPolicy.QUERY_AUTHENTICATED
     assert ProjectPolicy.query_scope(principal(role="manager")) == ProjectPolicy.QUERY_AUTHENTICATED
     assert ProjectPolicy.query_scope(principal(role="admin")) == ProjectPolicy.QUERY_GLOBAL
+
+
+def test_membership_visibility_is_not_granted_by_team_project_visibility():
+    member_access = ProjectPolicy.access_for(
+        principal(user_id=8),
+        project(owner_id=7, member_role="viewer", visibility="team"),
+    )
+    team_non_member_access = ProjectPolicy.access_for(
+        principal(user_id=8),
+        project(owner_id=7, visibility="team"),
+    )
+    manager_non_member_access = ProjectPolicy.access_for(
+        principal(user_id=8, role="manager"),
+        project(owner_id=7, visibility="team"),
+    )
+    admin_access = ProjectPolicy.access_for(
+        principal(user_id=99, role="admin"),
+        project(owner_id=7, visibility="private"),
+    )
+
+    assert member_access.can_view_members
+    assert not team_non_member_access.can_view_members
+    assert not manager_non_member_access.can_view_members
+    assert admin_access.can_view_members
+
+
+def test_owner_target_constraints_allow_only_normal_member_mutations():
+    owner = principal(user_id=7)
+    resource = project(owner_id=7)
+
+    assert ProjectPolicy.can_invite_member(owner, resource, "manager", target_user_id=8)
+    assert not ProjectPolicy.can_invite_member(owner, resource, "owner", target_user_id=8)
+    assert ProjectPolicy.can_change_member_role(
+        owner,
+        resource,
+        target_role="viewer",
+        new_role="manager",
+        target_user_id=8,
+    )
+    assert not ProjectPolicy.can_change_member_role(
+        owner,
+        resource,
+        target_role="viewer",
+        new_role="viewer",
+        target_user_id=8,
+    )
+    assert not ProjectPolicy.can_change_member_role(
+        owner,
+        resource,
+        target_role="owner",
+        new_role="manager",
+        target_user_id=8,
+    )
+    assert not ProjectPolicy.can_remove_member(
+        owner,
+        resource,
+        target_role="owner",
+        target_user_id=7,
+    )
+
+
+def test_manager_target_constraints_are_limited_to_viewer_and_contributor():
+    manager = principal(user_id=8)
+    resource = project(owner_id=7, member_role="manager")
+
+    assert ProjectPolicy.can_invite_member(manager, resource, "viewer", target_user_id=9)
+    assert ProjectPolicy.can_invite_member(manager, resource, "contributor", target_user_id=9)
+    assert not ProjectPolicy.can_invite_member(manager, resource, "manager", target_user_id=9)
+    assert ProjectPolicy.can_change_member_role(
+        manager,
+        resource,
+        target_role="viewer",
+        new_role="contributor",
+        target_user_id=9,
+    )
+    assert not ProjectPolicy.can_change_member_role(
+        manager,
+        resource,
+        target_role="viewer",
+        new_role="manager",
+        target_user_id=9,
+    )
+    assert not ProjectPolicy.can_change_member_role(
+        manager,
+        resource,
+        target_role="manager",
+        new_role="viewer",
+        target_user_id=9,
+    )
+    assert ProjectPolicy.can_remove_member(
+        manager,
+        resource,
+        target_role="contributor",
+        target_user_id=9,
+    )
+    assert not ProjectPolicy.can_remove_member(
+        manager,
+        resource,
+        target_role="manager",
+        target_user_id=9,
+    )
+
+
+def test_admin_can_manage_normal_roles_without_project_membership_but_not_owner():
+    admin = principal(user_id=99, role="admin")
+    resource = project(owner_id=7)
+
+    assert ProjectPolicy.can_invite_member(admin, resource, "manager", target_user_id=8)
+    assert ProjectPolicy.can_change_member_role(
+        admin,
+        resource,
+        target_role="manager",
+        new_role="viewer",
+        target_user_id=8,
+    )
+    assert ProjectPolicy.can_remove_member(
+        admin,
+        resource,
+        target_role="manager",
+        target_user_id=8,
+    )
+    assert not ProjectPolicy.can_change_member_role(
+        admin,
+        resource,
+        target_role="owner",
+        new_role="viewer",
+        target_user_id=7,
+    )
+    assert not ProjectPolicy.can_remove_member(
+        admin,
+        resource,
+        target_role="owner",
+        target_user_id=7,
+    )
+
+
+def test_membership_policy_rejects_self_mutation():
+    manager = principal(user_id=8)
+    resource = project(owner_id=7, member_role="manager")
+
+    assert not ProjectPolicy.can_invite_member(manager, resource, "viewer", target_user_id=8)
+    assert not ProjectPolicy.can_change_member_role(
+        manager,
+        resource,
+        target_role="manager",
+        new_role="viewer",
+        target_user_id=8,
+    )
+    assert not ProjectPolicy.can_remove_member(
+        manager,
+        resource,
+        target_role="manager",
+        target_user_id=8,
+    )

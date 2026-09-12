@@ -2,9 +2,9 @@
 
 ## Phase Status
 
-Phase 2.2c finalizes the normal HTML and REST project authorization model. This document describes the policy contract used by the project service, repository query scope, routes, serializers, templates, and tests.
+Phase 2.2c and Phase 2.2d finalize the normal HTML and REST project authorization model, including target-aware membership mutation. This document describes the policy contract used by the project and membership services, repository query scopes, routes, serializers, templates, and tests.
 
-Membership mutation routes, ownership transfer workflows, share-token routes, CSRF protection, and intentional vulnerabilities remain deferred.
+Ownership transfer workflows, share-token routes, CSRF protection, and intentional vulnerabilities remain deferred.
 
 ## Authorization Pipeline
 
@@ -59,11 +59,13 @@ Project membership roles are `owner`, `manager`, `contributor`, and `viewer`.
 | Edit visibility | Yes | No | No | No | Yes |
 | Delete project | Yes | No | No | No | Yes |
 | Manage members | Yes | Yes, scoped | No | No | Yes |
+| View member list | Yes | Yes | Yes | Yes | Yes |
 | Invite viewer/contributor | Yes | Yes | No | No | Yes |
-| Invite manager/owner | Yes/future boundary | No | No | No | Yes/future boundary |
+| Invite manager | Yes | No | No | No | Yes |
+| Assign owner | No | No | No | No | No |
 | Transfer ownership | Future owner-only workflow | No | No | No | Future global capability |
 
-Membership mutation is not implemented in this phase. The policy exposes the boundaries so future routes can reuse them without rebuilding authorization logic.
+Membership mutation uses target-aware policy methods. Project membership permits `owner`, `manager`, `contributor`, and `viewer`; ordinary mutation can create or manage only `manager`, `contributor`, and `viewer`. A global admin is never represented as a project membership role.
 
 ## Visibility
 
@@ -83,6 +85,7 @@ can_edit_metadata
 can_edit_visibility
 can_delete
 can_manage_members
+can_view_members
 can_invite_viewer
 can_invite_contributor
 can_invite_manager
@@ -91,6 +94,18 @@ can_change_member_role
 can_remove_member
 can_transfer_ownership
 ```
+
+Mutation policy methods evaluate the actor, project, target identity, target's current role, and requested role together:
+
+```text
+can_invite_member(actor, project, requested_role, target_user_id)
+can_change_member_role(actor, project, target_role, requested_role, target_user_id)
+can_remove_member(actor, project, target_role, target_user_id)
+```
+
+Owners and global admins may mutate normal member roles. Project managers may invite or remove viewers and contributors and may change only viewer/contributor roles in either direction. No ordinary mutation can assign, demote, or remove an owner, and self role changes, self removal, and self invitation are denied.
+
+`can_view_members` is separate from `can_manage_members`. Project members may read the member list, while an active non-member who sees a `team` project remains read-only and cannot enumerate members. A private-project non-member is outside the repository scope and receives the existing 404 behavior.
 
 The HTML edit GET and POST paths use the same metadata-edit boundary. A viewer or contributor cannot see the edit form, and a manager cannot change visibility even though a manager can edit ordinary metadata.
 
@@ -110,9 +125,9 @@ Unauthorized or nonexistent project lookups use the existing indistinguishable 4
 
 ## REST Parity
 
-The REST project blueprint exposes the same list, create, detail, update, and delete workflows as HTML. It calls `ProjectService` only; it does not query the repository or calculate role decisions itself. The service continues to call `ProjectPolicy.access_for()` and supplies the explicit repository scope.
+The REST project blueprint exposes the same project and membership workflows as HTML. It calls `ProjectService` and `MembershipService` only; it does not query repositories or calculate role decisions itself. Both services call `ProjectPolicy`, and membership mutation uses the same target-aware decision for HTML and REST.
 
-REST mutations accept only project metadata fields and use the service validation and capability boundaries. The JSON serializer keeps global role/capability separate from project membership and excludes internal database fields and the raw policy object. API errors use stable JSON envelopes while retaining the HTML authorization decisions: unauthorized private objects return 404, visible read-only objects return 403 for mutations, and owner/admin capabilities remain unchanged.
+REST project mutations accept only project metadata fields and membership mutations accept only `user_id`/`role` or `role` as appropriate. The JSON serializers keep global role/capability separate from project membership and exclude internal database fields and the raw policy object. API errors use stable JSON envelopes while retaining the HTML authorization decisions: unauthorized private objects return 404, visible read-only objects return 403 for mutations, duplicate membership returns 409, and validation returns 400.
 
 ## UI Contract
 

@@ -63,7 +63,7 @@ def test_owner_can_create_list_edit_and_delete_project():
     project_id = int(location.rstrip("/").rsplit("/", 1)[-1])
     detail = browser.request(f"/project/{project_id}")
     assert detail.status == 200
-    assert account["username"] not in detail.body
+    assert account["username"] in detail.body
     assert "owner" in detail.body
 
     response = browser.request(

@@ -204,6 +204,7 @@ class ProjectService:
         project["can_edit_visibility"] = access.can_edit_visibility
         project["can_delete"] = access.can_delete
         project["can_manage_members"] = access.can_manage_members
+        project["can_view_members"] = access.can_view_members
         return project
 
 

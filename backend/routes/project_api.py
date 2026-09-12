@@ -1,13 +1,17 @@
 from flask import Blueprint, g, jsonify, request
 from werkzeug.exceptions import BadRequest
 
+from backend.services.membership_service import MembershipError, MembershipService
 from backend.services.project_service import ProjectError, ProjectService
 
 
 PROJECT_FIELDS = {"name", "description", "visibility"}
 
 
-def create_project_api_blueprint(project_service: ProjectService):
+def create_project_api_blueprint(
+    project_service: ProjectService,
+    membership_service: MembershipService | None = None,
+):
     blueprint = Blueprint("project_api", __name__, url_prefix="/api/projects")
 
     @blueprint.get("")
@@ -53,6 +57,72 @@ def create_project_api_blueprint(project_service: ProjectService):
         except ProjectError as error:
             return _project_error_response(error)
         return jsonify({"data": _serialize_project(project)})
+
+    @blueprint.get("/<int:project_id>/members")
+    def list_members(project_id):
+        principal, error_response = _authenticated_principal()
+        if error_response:
+            return error_response
+        try:
+            members = membership_service.list_members(principal, project_id)
+        except (ProjectError, MembershipError) as error:
+            return _service_error_response(error)
+        return jsonify({"data": [_serialize_member(member) for member in members]})
+
+    @blueprint.post("/<int:project_id>/members")
+    def invite_member(project_id):
+        principal, error_response = _authenticated_principal()
+        if error_response:
+            return error_response
+        payload, error_response = _json_payload()
+        if error_response:
+            return error_response
+        error_response = _reject_unknown_fields(payload, {"user_id", "role"}, "membership")
+        if error_response:
+            return error_response
+        try:
+            member = membership_service.invite_member(
+                principal,
+                project_id,
+                payload.get("user_id"),
+                payload.get("role"),
+            )
+        except (ProjectError, MembershipError) as error:
+            return _service_error_response(error)
+        return jsonify({"data": _serialize_member(member)}), 201
+
+    @blueprint.patch("/<int:project_id>/members/<int:user_id>")
+    def change_member_role(project_id, user_id):
+        principal, error_response = _authenticated_principal()
+        if error_response:
+            return error_response
+        payload, error_response = _json_payload()
+        if error_response:
+            return error_response
+        error_response = _reject_unknown_fields(payload, {"role"}, "membership")
+        if error_response:
+            return error_response
+        try:
+            member = membership_service.change_member_role(
+                principal,
+                project_id,
+                user_id,
+                payload.get("role"),
+            )
+        except (ProjectError, MembershipError) as error:
+            return _service_error_response(error)
+        return jsonify({"data": _serialize_member(member)})
+
+    @blueprint.delete("/<int:project_id>/members/<int:user_id>")
+    def remove_member(project_id, user_id):
+        principal, error_response = _authenticated_principal()
+        if error_response:
+            return error_response
+        try:
+            member = membership_service.remove_member(principal, project_id, user_id)
+        except (ProjectError, MembershipError) as error:
+            return _service_error_response(error)
+        return jsonify({"data": member})
 
     @blueprint.patch("/<int:project_id>")
     def update_project(project_id):
@@ -119,14 +189,14 @@ def _json_payload():
     return payload, None
 
 
-def _reject_unknown_fields(payload):
-    unknown_fields = sorted(set(payload) - PROJECT_FIELDS)
+def _reject_unknown_fields(payload, allowed_fields=PROJECT_FIELDS, resource="project"):
+    unknown_fields = sorted(set(payload) - allowed_fields)
     if not unknown_fields:
         return None
     fields = ", ".join(unknown_fields)
     return _api_error(
         "validation_error",
-        f"Unsupported project fields: {fields}.",
+        f"Unsupported {resource} fields: {fields}.",
         400,
     )
 
@@ -149,6 +219,15 @@ def _serialize_project(project: dict) -> dict:
         "can_edit_visibility": project.get("can_edit_visibility", False),
         "can_delete": project.get("can_delete", False),
         "can_manage_members": project.get("can_manage_members", False),
+        "can_view_members": project.get("can_view_members", False),
+    }
+
+
+def _serialize_member(member: dict) -> dict:
+    return {
+        "user_id": member["user_id"],
+        "username": member["username"],
+        "role": member["role"],
     }
 
 
@@ -157,6 +236,10 @@ def _serialize_timestamp(value):
 
 
 def _project_error_response(error: ProjectError):
+    return _api_error(error.code, error.message, error.status_code)
+
+
+def _service_error_response(error):
     return _api_error(error.code, error.message, error.status_code)
 
 

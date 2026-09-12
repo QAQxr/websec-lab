@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2c HTML and REST project CRUD plus the shared authorization model finalized locally; membership mutation and later business modules remain deferred
+**Implementation status:** Phase 2.2d HTML and REST membership mutation finalized locally; ownership transfer and later business modules remain deferred
 
 ---
 
@@ -465,10 +465,11 @@ The route names below describe real product workflows. Vulnerability names are d
 | `GET` | `/project/<project_id>` | Project dashboard | Owner/member/admin; active users read `team` projects |
 | `GET, POST` | `/project/<project_id>/edit` | Edit project details | Owner/manager |
 | `POST` | `/project/<project_id>/delete` | Delete project | Owner/admin |
-| `GET` | `/project/<project_id>/members` | Member list | Member/manager |
-| `POST` | `/project/<project_id>/members` | Invite member | Owner/manager |
-| `POST` | `/project/<project_id>/members/<user_id>/role` | Change member role | Owner/admin |
-| `POST` | `/project/<project_id>/members/<user_id>/remove` | Remove member | Owner/manager |
+| `GET` | `/project/<project_id>/members` | Member list | Project member/owner/admin |
+| `GET` | `/project/<project_id>/members/new` | Invite form | Owner/manager/admin |
+| `POST` | `/project/<project_id>/members` | Invite member | Owner/manager/admin, target-aware |
+| `POST` | `/project/<project_id>/members/<user_id>/role` | Change member role | Owner/admin, manager-scoped |
+| `POST` | `/project/<project_id>/members/<user_id>/remove` | Remove member | Owner/manager/admin, target-aware |
 | `GET, POST` | `/project/<project_id>/template-preview` | Preview project report/template | Member |
 | `POST` | `/project/<project_id>/import` | Import project metadata from a URL | Member/manager |
 
@@ -513,7 +514,7 @@ Error responses use an `error` object and retain useful HTTP status codes instea
 }
 ```
 
-Phase 2.2c implements only the project CRUD endpoints below. Other API entries are planned and remain deferred until their corresponding business module is approved.
+Phase 2.2c and Phase 2.2d implement the project CRUD and membership endpoints below. Other API entries are planned and remain deferred until their corresponding business module is approved.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -530,6 +531,7 @@ Phase 2.2c implements only the project CRUD endpoints below. Other API entries a
 | `GET` | `/api/projects/<project_id>/members` | Members |
 | `POST` | `/api/projects/<project_id>/members` | Add member |
 | `PATCH` | `/api/projects/<project_id>/members/<user_id>` | Change membership |
+| `DELETE` | `/api/projects/<project_id>/members/<user_id>` | Remove member |
 | `GET` | `/api/files` | File list |
 | `POST` | `/api/files` | Multipart upload |
 | `GET` | `/api/files/<file_id>` | File metadata |
@@ -654,7 +656,7 @@ The vulnerable variant will introduce faults in separate business paths rather t
 
 Each fault will have a single source location, a verification test, and a final patched implementation. The rest of the permission layer remains correct so learners must understand the difference.
 
-## D.5 Phase 2.2c Authorization Finalization
+## D.5 Phase 2.2c/2.2d Authorization and Membership Finalization
 
 Phase 2.2c uses the following authorization pipeline:
 
@@ -683,7 +685,7 @@ Metadata edit, visibility edit, delete, member management, invitation, role-chan
 
 The repository receives an explicit scope from the service/policy boundary: `none`, `authenticated`, or `global`. It applies owner/member/team/global SQL filtering as defense-in-depth and never infers admin capability itself. HTML edit GET and POST use the same metadata-edit boundary.
 
-Membership mutation, ownership transfer, share-token access, CSRF protection, and intentional vulnerabilities remain outside this phase. REST project CRUD uses the same `ProjectService`, `ProjectPolicy`, and repository scope as HTML.
+Membership mutation now uses the same `ProjectPolicy` target-aware decision for HTML and REST through `MembershipService` and `MembershipRepository`. Owners and global admins can manage normal roles; managers are limited to viewer/contributor targets; owner assignment, owner removal/demotion, self mutation, and global-manager-without-membership confusion are denied. Ownership transfer, share-token access, CSRF protection, and intentional vulnerabilities remain outside this phase.
 
 ## D.6 Authentication Lifecycle
 
@@ -1229,9 +1231,21 @@ Implement only after explicit approval:
 * Project ownership, visibility, membership, global-role, field-level capability, and object-scope policy tests: complete locally.
 * Single-source `ProjectPolicy` result consumed by the project service, routes, templates, and repository scope.
 * REST project parity: complete locally after final verification.
-* Membership mutation and ownership transfer: deferred to Phase 3.
+* Membership mutation: implemented in Phase 2.2d; ownership transfer remains deferred.
 
 Gate: ordinary authenticated users can complete the primary HTML and REST project workflows, team visibility is read-only for non-members, private/shared objects remain scoped, HTML/REST authorization decisions are identical, and API serialization does not expose internal fields.
+
+### Phase 2.2d: Membership Mutation (complete locally)
+
+Implement only after explicit approval:
+
+* Membership repository with parameterized lookup, create, role update, delete, and duplicate-constraint handling.
+* Membership service for invite, role change, removal, target lookup, validation, transaction orchestration, and stable errors.
+* Target-aware policy for owner, manager, contributor, viewer, global manager, and global admin boundaries.
+* HTML and REST member list, invite, role change, and removal workflows.
+* Owner invariant, self-mutation, duplicate membership, object-scope, IDOR/BOLA, and HTML/REST parity tests.
+
+Gate: normal roles can be managed according to the target-aware matrix, owner assignment/demotion/removal is impossible, duplicate races map to `409`, private/team scope remains fail-closed, full regression passes, and no intentional vulnerability behavior is introduced.
 
 ## Phase 3: Core Business Modules
 
@@ -1239,7 +1253,7 @@ Implement:
 
 * Files, upload metadata, download, preview, and sharing.
 * Messages, threads, notifications, and comments.
-* Member invitations and role changes.
+* Ownership transfer and share-token behavior only after separate approval.
 * Admin user/settings/log views.
 * Internal API service and private network routing.
 * Redis-backed sessions, cache, queue, and temporary data.
@@ -1411,7 +1425,7 @@ This design phase is considered stable when:
 * The threat model prevents accidental use against real systems.
 * The roadmap limits each vulnerability increment to two or three issues before verification.
 
-The next implementation step after the finalized Phase 2.2c authorization model and REST project parity is the separately approved membership increment. Phase 2.2c must not introduce intentional vulnerabilities.
+The next implementation step after the finalized Phase 2.2c authorization model and Phase 2.2d membership mutation is separately approved ownership transfer or share-token work. Phase 2.2d must not introduce CSRF or intentional vulnerability behavior.
 
 ---
 

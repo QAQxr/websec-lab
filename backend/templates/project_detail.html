@@ -32,6 +32,9 @@
         {% if project.can_edit_metadata %}
         <a class="secondary" href="{{ url_for('projects.edit', project_id=project.id) }}">Edit project</a>
         {% endif %}
+        {% if project.can_view_members %}
+        <a class="secondary" href="{{ url_for('projects.members', project_id=project.id) }}">{% if project.can_manage_members %}Manage members{% else %}View members{% endif %}</a>
+        {% endif %}
         {% if project.can_delete %}
         <form action="{{ url_for('projects.delete', project_id=project.id) }}" method="post">
             <button class="danger" type="submit">Delete project</button>
@@ -40,4 +43,19 @@
         <a class="secondary" href="{{ url_for('projects.index') }}">Back to projects</a>
     </div>
 </section>
+
+{% if project.can_view_members %}
+<section class="card">
+    <h2>Members</h2>
+    {% if members %}
+    <ul>
+        {% for member in members %}
+        <li><strong>{{ member.username }}</strong> <span class="muted">{{ member.role }}</span></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No members are available.</p>
+    {% endif %}
+</section>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Invite member{% endblock %}
+
+{% block content %}
+<section class="card form">
+    <p class="muted">{{ project.name }} · Membership</p>
+    <h1>Invite member</h1>
+    {% if errors %}
+    <div class="error">
+        {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <form action="{{ url_for('projects.new_member', project_id=project.id) }}" method="post">
+        <label for="user_id">User ID</label>
+        <input id="user_id" name="user_id" type="number" min="1" value="{{ values.user_id }}" required>
+        <label for="role">Project role</label>
+        <select id="role" name="role">
+            {% for role in role_options %}
+            <option value="{{ role }}"{% if values.role == role %} selected{% endif %}>{{ role }}</option>
+            {% endfor %}
+        </select>
+        <div class="actions">
+            <button class="primary" type="submit">Invite member</button>
+            <a class="secondary" href="{{ url_for('projects.members', project_id=project.id) }}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

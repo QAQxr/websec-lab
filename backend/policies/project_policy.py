@@ -17,6 +17,7 @@ class ProjectAccess:
     can_edit_visibility: bool
     can_delete: bool
     can_manage_members: bool
+    can_view_members: bool
     can_invite_viewer: bool
     can_invite_contributor: bool
     can_invite_manager: bool
@@ -34,6 +35,7 @@ class ProjectPolicy:
     VIEW_ROLES = {"viewer", "contributor", "manager", "owner"}
     MANAGER_ROLES = {"manager", "owner"}
     MEMBER_ROLES = VIEW_ROLES
+    NORMAL_MEMBER_ROLES = {"viewer", "contributor", "manager"}
     ROLE_CHANGE_ROLES = {"viewer", "contributor"}
     QUERY_NONE = "none"
     QUERY_AUTHENTICATED = "authenticated"
@@ -85,6 +87,9 @@ class ProjectPolicy:
         can_manage_members = is_active and (
             is_global_admin or is_owner or membership_role == "manager"
         )
+        can_view_members = is_active and (
+            is_global_admin or is_owner or membership_role in cls.MEMBER_ROLES
+        )
         can_invite_viewer = can_manage_members
         can_invite_contributor = can_manage_members
         can_invite_manager = is_active and (is_global_admin or is_owner)
@@ -108,6 +113,7 @@ class ProjectPolicy:
             can_edit_visibility=can_edit_visibility,
             can_delete=can_delete,
             can_manage_members=can_manage_members,
+            can_view_members=can_view_members,
             can_invite_viewer=can_invite_viewer,
             can_invite_contributor=can_invite_contributor,
             can_invite_manager=can_invite_manager,
@@ -174,20 +180,42 @@ class ProjectPolicy:
         return cls.access_for(principal, project).can_invite_owner
 
     @classmethod
+    def can_invite_member(
+        cls,
+        principal,
+        project: dict,
+        new_role: str | None,
+        target_user_id: int | None = None,
+    ) -> bool:
+        access = cls.access_for(principal, project)
+        if not access.can_manage_members or new_role not in cls.NORMAL_MEMBER_ROLES:
+            return False
+        if target_user_id is not None and target_user_id == principal.get("id"):
+            return False
+        if access.is_global_admin or access.is_owner:
+            return True
+        return access.membership_role == "manager" and new_role in cls.ROLE_CHANGE_ROLES
+
+    @classmethod
     def can_change_member_role(
         cls,
         principal,
         project: dict,
         target_role: str | None = None,
         new_role: str | None = None,
+        target_user_id: int | None = None,
     ) -> bool:
         access = cls.access_for(principal, project)
         if not access.can_change_member_role:
             return False
-        if access.is_global_admin:
+        if target_user_id is not None and target_user_id == principal.get("id"):
+            return False
+        if target_role not in cls.NORMAL_MEMBER_ROLES:
+            return False
+        if new_role not in cls.NORMAL_MEMBER_ROLES or target_role == new_role:
+            return False
+        if access.is_global_admin or access.is_owner:
             return True
-        if access.is_owner:
-            return target_role != "owner" and new_role != "owner"
         return (
             target_role in cls.ROLE_CHANGE_ROLES
             and new_role in cls.ROLE_CHANGE_ROLES
@@ -199,12 +227,15 @@ class ProjectPolicy:
         principal,
         project: dict,
         target_role: str | None = None,
+        target_user_id: int | None = None,
     ) -> bool:
         access = cls.access_for(principal, project)
         if not access.can_remove_member:
             return False
-        if access.is_global_admin:
+        if target_user_id is not None and target_user_id == principal.get("id"):
+            return False
+        if target_role not in cls.NORMAL_MEMBER_ROLES:
+            return False
+        if access.is_global_admin or access.is_owner:
             return True
-        if access.is_owner:
-            return target_role != "owner"
         return target_role in cls.ROLE_CHANGE_ROLES

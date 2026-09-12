@@ -95,4 +95,4 @@ Implemented routes:
 * `GET /profile`
 * `GET /dashboard`
 
-HTML and REST project CRUD and their shared authorization model are implemented in Phase 2.2c. Membership mutation, ownership transfer, share-token access, password reset, CSRF protection, other REST business APIs, and all intentional vulnerability variants remain deferred to later phases.
+HTML and REST project CRUD and their shared authorization model are implemented in Phase 2.2c, and normal membership mutation is implemented in Phase 2.2d. Ownership transfer, share-token access, password reset, CSRF protection, other REST business APIs, and all intentional vulnerability variants remain deferred to later phases.

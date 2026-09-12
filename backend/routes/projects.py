@@ -1,9 +1,17 @@
 from flask import Blueprint, g, redirect, render_template, request, url_for
 
+from backend.services.membership_service import (
+    MembershipError,
+    MembershipForbiddenError,
+    MembershipService,
+)
 from backend.services.project_service import ProjectError, ProjectService
 
 
-def create_projects_blueprint(project_service: ProjectService):
+def create_projects_blueprint(
+    project_service: ProjectService,
+    membership_service: MembershipService,
+):
     blueprint = Blueprint("projects", __name__)
 
     @blueprint.get("/projects")
@@ -44,7 +52,78 @@ def create_projects_blueprint(project_service: ProjectService):
             project = project_service.get_project(g.current_user, project_id)
         except ProjectError as error:
             return _error_response(error)
-        return render_template("project_detail.html", project=project)
+        members = []
+        try:
+            members = membership_service.list_members(g.current_user, project_id)
+        except MembershipForbiddenError:
+            pass
+        except MembershipError as error:
+            return _error_response(error)
+        return render_template("project_detail.html", project=project, members=members)
+
+    @blueprint.get("/project/<int:project_id>/members")
+    def members(project_id):
+        if g.current_user is None:
+            return redirect(url_for("auth.login"))
+        try:
+            project = project_service.get_project(g.current_user, project_id)
+            project_members = membership_service.list_members(g.current_user, project_id)
+        except (ProjectError, MembershipError) as error:
+            return _error_response(error)
+        return render_template(
+            "project_members.html",
+            project=project,
+            members=project_members,
+            errors=[],
+        )
+
+    @blueprint.get("/project/<int:project_id>/members/new")
+    @blueprint.post("/project/<int:project_id>/members")
+    def new_member(project_id):
+        if g.current_user is None:
+            return redirect(url_for("auth.login"))
+        try:
+            project = membership_service.get_management_project(g.current_user, project_id)
+        except (ProjectError, MembershipError) as error:
+            return _error_response(error)
+        values = _member_form_values(request.form if request.method == "POST" else {})
+        if request.method == "POST":
+            try:
+                membership_service.invite_member(
+                    g.current_user,
+                    project_id,
+                    values["user_id"],
+                    values["role"],
+                )
+            except MembershipError as error:
+                return _member_form_response(project, values, [error.message], error.status_code)
+            return redirect(url_for("projects.members", project_id=project_id))
+        return _member_form_response(project, values, [])
+
+    @blueprint.post("/project/<int:project_id>/members/<int:user_id>/role")
+    def change_member_role(project_id, user_id):
+        if g.current_user is None:
+            return redirect(url_for("auth.login"))
+        try:
+            membership_service.change_member_role(
+                g.current_user,
+                project_id,
+                user_id,
+                request.form.get("role", ""),
+            )
+        except (ProjectError, MembershipError) as error:
+            return _error_response(error)
+        return redirect(url_for("projects.members", project_id=project_id))
+
+    @blueprint.post("/project/<int:project_id>/members/<int:user_id>/remove")
+    def remove_member(project_id, user_id):
+        if g.current_user is None:
+            return redirect(url_for("auth.login"))
+        try:
+            membership_service.remove_member(g.current_user, project_id, user_id)
+        except (ProjectError, MembershipError) as error:
+            return _error_response(error)
+        return redirect(url_for("projects.members", project_id=project_id))
 
     @blueprint.route("/project/<int:project_id>/edit", methods=["GET", "POST"])
     def edit(project_id):
@@ -92,6 +171,26 @@ def _form_values(source) -> dict:
         "description": source.get("description", ""),
         "visibility": source.get("visibility", "private"),
     }
+
+
+def _member_form_values(source) -> dict:
+    return {
+        "user_id": source.get("user_id", ""),
+        "role": source.get("role", "viewer"),
+    }
+
+
+def _member_form_response(project, values, errors, status_code=200):
+    return (
+        render_template(
+            "member_form.html",
+            project=project,
+            values=values,
+            errors=errors,
+            role_options=("viewer", "contributor", "manager"),
+        ),
+        status_code,
+    )
 
 
 def _project_form_response(title, values, errors, status_code=200, project=None):

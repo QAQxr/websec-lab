@@ -1,6 +1,6 @@
 # WebSec Lab
 
-Phase 2.1, Phase 2.2a, Phase 2.2b, and Phase 2.2c provide the AcmeCloud infrastructure, deterministic database baseline, authentication foundation, and normal HTML/REST project workflow:
+Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c, and Phase 2.2d provide the AcmeCloud infrastructure, deterministic database baseline, authentication foundation, normal HTML/REST project workflow, and normal membership mutation workflow:
 
 ```text
 Browser -> 127.0.0.1:8080 -> Nginx -> Flask web
@@ -29,7 +29,7 @@ docker compose --profile test run --rm test-runner
 
 Integration and schema tests run against the Compose MySQL 8.4 service. SQLite is reserved for pure unit tests.
 
-The Phase 2.2a fixture contains fake local-only users, projects, memberships, files, messages, comments, notifications, API keys, audit logs, and system settings. Authenticated users can access the HTML and REST project list/create/detail/edit/delete workflows through the shared project policy, service, and repository layers. Phase 2.2c finalizes active authentication, global admin capability, project membership, ownership, visibility, field-level edit, object-scope, JSON serialization, and HTML/REST parity boundaries. See [`docs/architecture/rest.md`](docs/architecture/rest.md) for the API contract.
+The Phase 2.2a fixture contains fake local-only users, projects, memberships, files, messages, comments, notifications, API keys, audit logs, and system settings. Authenticated users can access the HTML and REST project list/create/detail/edit/delete workflows and the Phase 2.2d membership invite/role-change/removal workflows through shared service, policy, and repository layers. Phase 2.2c/2.2d finalize active authentication, global admin capability, project membership, ownership, visibility, field-level edit, target-aware mutation, object-scope, JSON serialization, and HTML/REST parity boundaries. See [`docs/architecture/rest.md`](docs/architecture/rest.md) and [`docs/architecture/membership.md`](docs/architecture/membership.md).
 
 ## Authentication Foundation
 
@@ -39,7 +39,7 @@ Open `http://127.0.0.1:8080/register` to create a local account. New accounts ar
 
 Authentication uses MySQL for users, verification records, and session audit rows, and Redis for active session state. The cookie contains only an opaque session identifier and is HttpOnly with SameSite=Lax. Local HTTP defaults to `Secure=false`; HTTPS-like deployments should set `SESSION_COOKIE_SECURE=true`.
 
-The current phase does not include membership mutation routes, ownership transfer, share-token routes, password reset, CSRF protection, other REST business APIs, or intentional vulnerabilities.
+The current phase does not include ownership transfer, share-token routes, password reset, CSRF protection, other REST business APIs, or intentional vulnerabilities.
 
 ## Reset
 

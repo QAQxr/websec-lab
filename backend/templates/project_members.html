@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} members{% endblock %}
+
+{% block content %}
+<section class="card">
+    <p class="muted">{{ project.name }} · Membership</p>
+    <h1>Project members</h1>
+    {% if errors %}
+    <div class="error">
+        {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="actions">
+        {% if project.can_manage_members %}
+        <a class="secondary" href="{{ url_for('projects.new_member', project_id=project.id) }}">Invite member</a>
+        {% endif %}
+        <a class="secondary" href="{{ url_for('projects.detail', project_id=project.id) }}">Back to project</a>
+    </div>
+</section>
+
+<section class="card">
+    <h2>Members</h2>
+    {% if members %}
+    <ul>
+        {% for member in members %}
+        <li>
+            <strong>{{ member.username }}</strong>
+            <span class="muted">{{ member.role }}</span>
+            {% if member.role_options or member.can_remove %}
+            <div class="actions">
+                {% if member.role_options %}
+                <form action="{{ url_for('projects.change_member_role', project_id=project.id, user_id=member.user_id) }}" method="post">
+                    <label>
+                        Change role
+                        <select name="role">
+                            {% for role in member.role_options %}
+                            <option value="{{ role }}">{{ role }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <button class="secondary" type="submit">Save role</button>
+                </form>
+                {% endif %}
+                {% if member.can_remove %}
+                <form action="{{ url_for('projects.remove_member', project_id=project.id, user_id=member.user_id) }}" method="post">
+                    <button class="danger" type="submit">Remove</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No members are available.</p>
+    {% endif %}
+</section>
+{% endblock %}
