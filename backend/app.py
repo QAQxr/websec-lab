@@ -10,6 +10,7 @@ from backend.routes.projects import create_projects_blueprint
 from backend.routes.site import create_site_blueprint
 from backend.services.auth_service import build_auth_service
 from backend.services.health_service import build_health_service
+from backend.services.ownership_transfer_service import build_ownership_transfer_service
 from backend.services.project_service import build_project_service
 from backend.services.membership_service import build_membership_service
 
@@ -32,6 +33,8 @@ def create_app(settings=None):
     app.extensions["project_service"] = project_service
     membership_service = build_membership_service(settings, project_service)
     app.extensions["membership_service"] = membership_service
+    ownership_transfer_service = build_ownership_transfer_service(settings, project_service)
+    app.extensions["ownership_transfer_service"] = ownership_transfer_service
 
     @app.before_request
     def load_authenticated_user():
@@ -75,8 +78,20 @@ def create_app(settings=None):
         return render_template("error.html", message="The service could not complete the request."), 500
 
     app.register_blueprint(create_site_blueprint())
-    app.register_blueprint(create_projects_blueprint(project_service, membership_service))
-    app.register_blueprint(create_project_api_blueprint(project_service, membership_service))
+    app.register_blueprint(
+        create_projects_blueprint(
+            project_service,
+            membership_service,
+            ownership_transfer_service,
+        )
+    )
+    app.register_blueprint(
+        create_project_api_blueprint(
+            project_service,
+            membership_service,
+            ownership_transfer_service,
+        )
+    )
     app.register_blueprint(create_auth_blueprint(auth_service, settings))
     app.register_blueprint(create_health_blueprint(build_health_service(settings)))
     return app

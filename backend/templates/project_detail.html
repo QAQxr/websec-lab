@@ -35,6 +35,9 @@
         {% if project.can_view_members %}
         <a class="secondary" href="{{ url_for('projects.members', project_id=project.id) }}">{% if project.can_manage_members %}Manage members{% else %}View members{% endif %}</a>
         {% endif %}
+        {% if project.can_transfer_ownership %}
+        <a class="secondary" href="{{ url_for('projects.transfer_ownership', project_id=project.id) }}">Transfer ownership</a>
+        {% endif %}
         {% if project.can_delete %}
         <form action="{{ url_for('projects.delete', project_id=project.id) }}" method="post">
             <button class="danger" type="submit">Delete project</button>

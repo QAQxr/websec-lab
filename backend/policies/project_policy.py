@@ -239,3 +239,20 @@ class ProjectPolicy:
         if access.is_global_admin or access.is_owner:
             return True
         return target_role in cls.ROLE_CHANGE_ROLES
+
+    @classmethod
+    def can_transfer_ownership(
+        cls,
+        principal,
+        project: dict,
+        target_role: str | None = None,
+        target_user_id: int | None = None,
+    ) -> bool:
+        access = cls.access_for(principal, project)
+        if target_role not in cls.NORMAL_MEMBER_ROLES:
+            return False
+        if target_user_id is not None and target_user_id == principal.get("id"):
+            return False
+        if access.is_global_admin:
+            return True
+        return access.is_owner and project.get("member_role") == "owner"

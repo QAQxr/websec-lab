@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Transfer ownership{% endblock %}
+
+{% block content %}
+<section class="card form">
+    <p class="muted">{{ project.name }} · Ownership</p>
+    <h1>Transfer project ownership</h1>
+    <p>Only an existing active project member can become the new owner. The current owner will remain a project manager.</p>
+    {% if errors %}
+    <div class="error">
+        {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <form action="{{ url_for('projects.transfer_ownership', project_id=project.id) }}" method="post">
+        <label for="target_user_id">Existing member user ID</label>
+        <input id="target_user_id" name="target_user_id" type="number" min="1" value="{{ values.target_user_id }}" required>
+        <div class="actions">
+            <button class="primary" type="submit">Transfer ownership</button>
+            <a class="secondary" href="{{ url_for('projects.detail', project_id=project.id) }}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

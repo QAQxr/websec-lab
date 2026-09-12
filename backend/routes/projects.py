@@ -5,12 +5,17 @@ from backend.services.membership_service import (
     MembershipForbiddenError,
     MembershipService,
 )
+from backend.services.ownership_transfer_service import (
+    OwnershipTransferError,
+    OwnershipTransferService,
+)
 from backend.services.project_service import ProjectError, ProjectService
 
 
 def create_projects_blueprint(
     project_service: ProjectService,
     membership_service: MembershipService,
+    ownership_transfer_service: OwnershipTransferService,
 ):
     blueprint = Blueprint("projects", __name__)
 
@@ -60,6 +65,35 @@ def create_projects_blueprint(
         except MembershipError as error:
             return _error_response(error)
         return render_template("project_detail.html", project=project, members=members)
+
+    @blueprint.route(
+        "/project/<int:project_id>/ownership/transfer",
+        methods=["GET", "POST"],
+    )
+    def transfer_ownership(project_id):
+        if g.current_user is None:
+            return redirect(url_for("auth.login"))
+        try:
+            project = ownership_transfer_service.get_transfer_project(
+                g.current_user,
+                project_id,
+            )
+        except (ProjectError, OwnershipTransferError) as error:
+            return _error_response(error)
+        values = {"target_user_id": request.form.get("target_user_id", "")}
+        if request.method == "POST":
+            try:
+                project = ownership_transfer_service.transfer_ownership(
+                    g.current_user,
+                    project_id,
+                    values["target_user_id"],
+                )
+            except OwnershipTransferError as error:
+                return _ownership_form_response(project, values, [error.message], error.status_code)
+            except ProjectError as error:
+                return _error_response(error)
+            return redirect(url_for("projects.detail", project_id=project["id"]))
+        return _ownership_form_response(project, values, [])
 
     @blueprint.get("/project/<int:project_id>/members")
     def members(project_id):
@@ -188,6 +222,18 @@ def _member_form_response(project, values, errors, status_code=200):
             values=values,
             errors=errors,
             role_options=("viewer", "contributor", "manager"),
+        ),
+        status_code,
+    )
+
+
+def _ownership_form_response(project, values, errors, status_code=200):
+    return (
+        render_template(
+            "ownership_transfer_form.html",
+            project=project,
+            values=values,
+            errors=errors,
         ),
         status_code,
     )

@@ -2,9 +2,9 @@
 
 ## Phase Status
 
-Phase 2.2c REST project parity and Phase 2.2d membership mutation are implemented for the normal project API. The API uses the same active session principal, project/membership services, `ProjectPolicy`, repository query scopes, field validation, ownership rules, membership rules, and visibility rules as the HTML workflow.
+Phase 2.2c REST project parity, Phase 2.2d membership mutation, and Phase 2.2e ownership transfer are implemented for the normal project API. The API uses the same active session principal, project/membership/ownership-transfer services, `ProjectPolicy`, repository query scopes, field validation, ownership rules, membership rules, and visibility rules as the HTML workflow.
 
-Ownership transfer, share-token access, CSRF protection, and intentional vulnerability variants remain deferred.
+Share-token access, CSRF protection, and intentional vulnerability variants remain deferred.
 
 ## Endpoints
 
@@ -19,6 +19,7 @@ Ownership transfer, share-token access, CSRF protection, and intentional vulnera
 | `POST` | `/api/projects/<project_id>/members` | `MembershipService.invite_member()` | `201` |
 | `PATCH` | `/api/projects/<project_id>/members/<user_id>` | `MembershipService.change_member_role()` | `200` |
 | `DELETE` | `/api/projects/<project_id>/members/<user_id>` | `MembershipService.remove_member()` | `200` |
+| `POST` | `/api/projects/<project_id>/ownership-transfer` | `OwnershipTransferService.transfer_ownership()` | `200` |
 
 The REST blueprint does not access project or membership repositories directly. The request path is:
 
@@ -123,6 +124,8 @@ PATCH /api/projects/<project_id>/members/<user_id>
 
 `owner` is a protected role, not an ordinary mutation target. Target-aware policy denies owner assignment, owner demotion, owner removal, self mutation, manager escalation, and global-manager-without-membership confusion.
 
+Ownership transfer is an explicit action endpoint. Its JSON body accepts only `target_user_id`; the target must be an active existing project member with a normal role. It updates the project owner and both membership roles in one locked transaction.
+
 ## Authorization and Visibility
 
 The API preserves the HTML authorization matrix:
@@ -159,5 +162,12 @@ Member listing is allowed for project members, owners, and global admins. A team
 * invite, role change, removal, self-mutation, owner protection, and duplicate membership
 * private/team object scope and IDOR/BOLA regression behavior
 * HTML/REST parity and owner invariant checks
+
+`tests/integration/test_ownership_transfer.py` covers:
+
+* owner/global-admin success and old-owner-to-manager semantics
+* actor and target authorization boundaries
+* private/team object scope and IDOR/BOLA behavior
+* invariant failures, target validation, and HTML/REST parity
 
 The normal project API does not contain intentional IDOR, role injection, mass-assignment, or privilege-escalation behavior.

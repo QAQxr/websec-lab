@@ -311,3 +311,48 @@ def test_membership_policy_rejects_self_mutation():
         target_role="manager",
         target_user_id=8,
     )
+
+
+def test_ownership_transfer_policy_requires_owner_or_global_admin_and_normal_target():
+    owner = principal(user_id=7)
+    admin = principal(user_id=99, role="admin")
+    manager = principal(user_id=8)
+    owned_resource = project(owner_id=7, member_role="owner")
+    manager_resource = project(owner_id=7, member_role="manager")
+
+    assert ProjectPolicy.can_transfer_ownership(
+        owner,
+        owned_resource,
+        target_role="viewer",
+        target_user_id=8,
+    )
+    assert ProjectPolicy.can_transfer_ownership(
+        admin,
+        project(owner_id=7),
+        target_role="manager",
+        target_user_id=8,
+    )
+    assert not ProjectPolicy.can_transfer_ownership(
+        manager,
+        manager_resource,
+        target_role="viewer",
+        target_user_id=9,
+    )
+    assert not ProjectPolicy.can_transfer_ownership(
+        owner,
+        owned_resource,
+        target_role="owner",
+        target_user_id=8,
+    )
+    assert not ProjectPolicy.can_transfer_ownership(
+        owner,
+        owned_resource,
+        target_role="viewer",
+        target_user_id=7,
+    )
+    assert not ProjectPolicy.can_transfer_ownership(
+        owner,
+        project(owner_id=7, member_role="manager"),
+        target_role="viewer",
+        target_user_id=8,
+    )

@@ -205,6 +205,7 @@ class ProjectService:
         project["can_delete"] = access.can_delete
         project["can_manage_members"] = access.can_manage_members
         project["can_view_members"] = access.can_view_members
+        project["can_transfer_ownership"] = access.can_transfer_ownership
         return project
 
 

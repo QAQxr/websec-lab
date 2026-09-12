@@ -14,6 +14,8 @@
 
 **AcmeCloud product model design:** complete locally; no implementation changes were introduced.
 
+**Phase 2.2e ownership transfer:** complete locally after final verification; commit and push status pending.
+
 **Open Questions:** resolved for this phase.
 
 Phase 2.2a closeout decisions:
@@ -27,7 +29,7 @@ Phase 2.2a closeout decisions:
 * Phase 2.2c REST parity commit: `ba008a4 Implement Phase 2.2c REST project parity`.
 * Phase 2.2d implementation baseline commit: `b9da551 Implement Phase 2.2d membership mutation`.
 * The product-model phase changes only documentation; no production code, API, schema, or seed changes were introduced.
-* Phase 2.2c HTML and REST CRUD plus Phase 2.2d membership mutation are implemented and pushed; ownership transfer and share-token access remain deferred.
+* Phase 2.2c HTML and REST CRUD plus Phase 2.2d membership mutation are implemented and pushed; Phase 2.2e ownership transfer is implemented locally in the current phase.
 * `ProjectPolicy.access_for()` is the single authorization source; repository scopes are explicit and team visibility is read-only for non-members.
 * Global admin capability is separate from project membership; ownership uses `projects.owner_id` and mismatch cases fail closed.
 * REST routes reuse `ProjectService`, `ProjectPolicy`, and repository scopes; API serialization excludes internal project fields.
@@ -46,4 +48,4 @@ Verification:
 * Phase 2.1 regression passed.
 * Two full volume resets produced identical deterministic seed snapshots.
 
-There are no unresolved Phase 2.2a, Phase 2.2b, Phase 2.2c, or Phase 2.2d questions. The next approved design increments are ownership transfer or share-token access; CSRF and intentional vulnerabilities remain deferred.
+There are no unresolved Phase 2.2a, Phase 2.2b, Phase 2.2c, Phase 2.2d, or Phase 2.2e questions. The next approved design increment is File/Share access after security-hardening review; CSRF and intentional vulnerabilities remain deferred.

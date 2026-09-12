@@ -2,6 +2,10 @@ from flask import Blueprint, g, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 from backend.services.membership_service import MembershipError, MembershipService
+from backend.services.ownership_transfer_service import (
+    OwnershipTransferError,
+    OwnershipTransferService,
+)
 from backend.services.project_service import ProjectError, ProjectService
 
 
@@ -11,6 +15,7 @@ PROJECT_FIELDS = {"name", "description", "visibility"}
 def create_project_api_blueprint(
     project_service: ProjectService,
     membership_service: MembershipService | None = None,
+    ownership_transfer_service: OwnershipTransferService | None = None,
 ):
     blueprint = Blueprint("project_api", __name__, url_prefix="/api/projects")
 
@@ -124,6 +129,27 @@ def create_project_api_blueprint(
             return _service_error_response(error)
         return jsonify({"data": member})
 
+    @blueprint.post("/<int:project_id>/ownership-transfer")
+    def transfer_ownership(project_id):
+        principal, error_response = _authenticated_principal()
+        if error_response:
+            return error_response
+        payload, error_response = _json_payload()
+        if error_response:
+            return error_response
+        error_response = _reject_unknown_fields(payload, {"target_user_id"}, "ownership")
+        if error_response:
+            return error_response
+        try:
+            project = ownership_transfer_service.transfer_ownership(
+                principal,
+                project_id,
+                payload.get("target_user_id"),
+            )
+        except (ProjectError, OwnershipTransferError) as error:
+            return _service_error_response(error)
+        return jsonify({"data": _serialize_project(project)})
+
     @blueprint.patch("/<int:project_id>")
     def update_project(project_id):
         principal, error_response = _authenticated_principal()
@@ -158,6 +184,7 @@ def create_project_api_blueprint(
         except ProjectError as error:
             return _project_error_response(error)
         return jsonify({"data": {"id": project_id}})
+
 
     return blueprint
 
@@ -220,6 +247,7 @@ def _serialize_project(project: dict) -> dict:
         "can_delete": project.get("can_delete", False),
         "can_manage_members": project.get("can_manage_members", False),
         "can_view_members": project.get("can_view_members", False),
+        "can_transfer_ownership": project.get("can_transfer_ownership", False),
     }
 
 

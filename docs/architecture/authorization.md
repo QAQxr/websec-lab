@@ -2,9 +2,9 @@
 
 ## Phase Status
 
-Phase 2.2c and Phase 2.2d finalize the normal HTML and REST project authorization model, including target-aware membership mutation. This document describes the policy contract used by the project and membership services, repository query scopes, routes, serializers, templates, and tests.
+Phase 2.2c, Phase 2.2d, and Phase 2.2e finalize the normal HTML and REST project authorization model, including target-aware membership mutation and ownership transfer. This document describes the policy contract used by the project, membership, and ownership-transfer services, repository query scopes, routes, serializers, templates, and tests.
 
-Ownership transfer workflows, share-token routes, CSRF protection, and intentional vulnerabilities remain deferred.
+Share-token routes, CSRF protection, and intentional vulnerabilities remain deferred.
 
 ## Authorization Pipeline
 
@@ -63,7 +63,7 @@ Project membership roles are `owner`, `manager`, `contributor`, and `viewer`.
 | Invite viewer/contributor | Yes | Yes | No | No | Yes |
 | Invite manager | Yes | No | No | No | Yes |
 | Assign owner | No | No | No | No | No |
-| Transfer ownership | Future owner-only workflow | No | No | No | Future global capability |
+| Transfer ownership | Target-aware owner workflow | No | No | No | Target-aware global capability |
 
 Membership mutation uses target-aware policy methods. Project membership permits `owner`, `manager`, `contributor`, and `viewer`; ordinary mutation can create or manage only `manager`, `contributor`, and `viewer`. A global admin is never represented as a project membership role.
 
@@ -105,6 +105,8 @@ can_remove_member(actor, project, target_role, target_user_id)
 
 Owners and global admins may mutate normal member roles. Project managers may invite or remove viewers and contributors and may change only viewer/contributor roles in either direction. No ordinary mutation can assign, demote, or remove an owner, and self role changes, self removal, and self invitation are denied.
 
+Ownership transfer is a separate action. The current owner or a global admin may transfer ownership only to an active existing normal member. The old owner remains a `manager`; the target becomes the sole `owner`. Managers, viewers, contributors, global managers without project membership, and self/owner targets are denied. The transfer service re-checks the owner invariant inside a locked transaction.
+
 `can_view_members` is separate from `can_manage_members`. Project members may read the member list, while an active non-member who sees a `team` project remains read-only and cannot enumerate members. A private-project non-member is outside the repository scope and receives the existing 404 behavior.
 
 The HTML edit GET and POST paths use the same metadata-edit boundary. A viewer or contributor cannot see the edit form, and a manager cannot change visibility even though a manager can edit ordinary metadata.
@@ -125,7 +127,7 @@ Unauthorized or nonexistent project lookups use the existing indistinguishable 4
 
 ## REST Parity
 
-The REST project blueprint exposes the same project and membership workflows as HTML. It calls `ProjectService` and `MembershipService` only; it does not query repositories or calculate role decisions itself. Both services call `ProjectPolicy`, and membership mutation uses the same target-aware decision for HTML and REST.
+The REST project blueprint exposes the same project, membership, and ownership-transfer workflows as HTML. It calls services only; it does not query repositories or calculate role decisions itself. `ProjectService`, `MembershipService`, and `OwnershipTransferService` call `ProjectPolicy`, and membership/ownership decisions are shared by HTML and REST.
 
 REST project mutations accept only project metadata fields and membership mutations accept only `user_id`/`role` or `role` as appropriate. The JSON serializers keep global role/capability separate from project membership and exclude internal database fields and the raw policy object. API errors use stable JSON envelopes while retaining the HTML authorization decisions: unauthorized private objects return 404, visible read-only objects return 403 for mutations, duplicate membership returns 409, and validation returns 400.
 

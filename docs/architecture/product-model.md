@@ -2,7 +2,7 @@
 
 ## Status and Scope
 
-This document records the product model for the WebSec Lab application, AcmeCloud. It is a design artifact only. Phase 2.2e and later workflows must not be inferred as implemented from this document.
+This document records the product model for the WebSec Lab application, AcmeCloud. It is a design artifact only. Phase 2.2f and later workflows must not be inferred as implemented from this document.
 
 The current implementation baseline is:
 
@@ -12,6 +12,7 @@ Phase 2.2a  MySQL schema, deterministic seed, and data snapshot
 Phase 2.2b  authentication and server-side sessions
 Phase 2.2c  project HTML/REST CRUD and project authorization
 Phase 2.2d  membership listing, invite, role change, and removal
+Phase 2.2e  independent project ownership transfer
 ```
 
 This phase adds no Python code, route, API, database table, schema column, seed row, or vulnerability behavior.
@@ -81,7 +82,7 @@ The current global roles are:
 
 `projects.owner_id` is the ownership source of truth. Every project must have exactly one owner membership whose `user_id` matches `owner_id` and whose `member_role` is `owner`.
 
-The existing project policy treats a mismatched owner membership as fail-closed for owner capabilities. Ordinary membership mutation cannot assign, demote, or remove an owner. Ownership transfer is a separate atomic workflow and is not implemented in this phase.
+The existing project policy treats a mismatched owner membership as fail-closed for owner capabilities. Ordinary membership mutation cannot assign, demote, or remove an owner. Phase 2.2e implements ownership transfer as a separate atomic workflow with an active existing-member target; it does not create memberships or use ordinary role mutation.
 
 ### Project Roles
 
@@ -351,11 +352,11 @@ Knowing a project ID, file ID, folder ID, or share token must not bypass the app
 
 This roadmap is design guidance only. No item below is implemented by this document.
 
-### 2.2e Ownership Transfer
+### 2.2e Ownership Transfer (complete locally)
 
-Recommended next phase. Define an explicit owner-only/admin-approved workflow that atomically updates `projects.owner_id` and the unique owner membership invariant. Specify old-owner/new-owner roles, self/target validation, audit events, HTML/REST parity, and failure rollback before adding routes.
+Implemented as an explicit owner-only/global-admin workflow that atomically updates `projects.owner_id` and the unique owner membership invariant. The old owner becomes a manager, the active existing member target becomes owner, and the HTML/REST action uses one locked transaction with rollback.
 
-Ownership transfer comes first because file ownership policy, project administration, share creation, and audit accountability will depend on a stable ownership transition.
+Ownership transfer is complete locally. File ownership policy, project administration, share creation, and audit accountability can now build on a stable ownership transition.
 
 ### 2.2g CSRF and Security Hardening
 
@@ -377,7 +378,6 @@ Only after the normal workflows are stable and regression-covered, add isolated 
 
 The following remain design-only or deferred:
 
-* Ownership transfer.
 * Folder and File routes/services/storage lifecycle.
 * File access policy and download/upload behavior.
 * Share links, public access, expiration, and revocation workflows.

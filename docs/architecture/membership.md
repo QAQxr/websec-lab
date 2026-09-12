@@ -4,7 +4,7 @@
 
 Phase 2.2d implements the normal membership workflow. It provides invite, role change, removal, member listing, and matching HTML/REST authorization decisions without intentional vulnerability behavior.
 
-Ownership transfer, share-token access, CSRF protection, and vulnerable variants remain deferred.
+Share-token access, CSRF protection, and vulnerable variants remain deferred. Ownership transfer is implemented as the separate Phase 2.2e workflow documented in `docs/architecture/ownership-transfer.md`.
 
 ## Data Model
 

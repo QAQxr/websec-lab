@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2d HTML and REST membership mutation finalized and pushed; ownership transfer and later business modules remain deferred
+**Implementation status:** Phase 2.2e HTML and REST ownership transfer finalized locally; file/share access and later business modules remain deferred
 
 ---
 
@@ -685,7 +685,7 @@ Metadata edit, visibility edit, delete, member management, invitation, role-chan
 
 The repository receives an explicit scope from the service/policy boundary: `none`, `authenticated`, or `global`. It applies owner/member/team/global SQL filtering as defense-in-depth and never infers admin capability itself. HTML edit GET and POST use the same metadata-edit boundary.
 
-Membership mutation now uses the same `ProjectPolicy` target-aware decision for HTML and REST through `MembershipService` and `MembershipRepository`. Owners and global admins can manage normal roles; managers are limited to viewer/contributor targets; owner assignment, owner removal/demotion, self mutation, and global-manager-without-membership confusion are denied. Ownership transfer, share-token access, CSRF protection, and intentional vulnerabilities remain outside this phase.
+Membership mutation now uses the same `ProjectPolicy` target-aware decision for HTML and REST through `MembershipService` and `MembershipRepository`. Owners and global admins can manage normal roles; managers are limited to viewer/contributor targets; owner assignment, owner removal/demotion, self mutation, and global-manager-without-membership confusion are denied. Ownership transfer is a separate locked service action with an active existing-member target and old-owner-to-manager semantics. Share-token access, CSRF protection, and intentional vulnerabilities remain outside this phase.
 
 ## D.6 Authentication Lifecycle
 
@@ -1247,13 +1247,25 @@ Implement only after explicit approval:
 
 Gate: normal roles can be managed according to the target-aware matrix, owner assignment/demotion/removal is impossible, duplicate races map to `409`, private/team scope remains fail-closed, full regression passes, and no intentional vulnerability behavior is introduced.
 
+### Phase 2.2e: Ownership Transfer (complete locally)
+
+Implement only after explicit approval:
+
+* Independent HTML and REST ownership-transfer action endpoints.
+* Current-owner/global-admin actor policy with active existing-member target constraints.
+* Atomic project owner and membership role transition: old owner becomes manager and target becomes owner.
+* Project, membership, and user row locking with owner-invariant revalidation and rollback.
+* Authorization, target, invariant, object-scope, rollback, concurrency-strategy, and HTML/REST parity tests.
+
+Gate: ownership transfer cannot be performed through ordinary role mutation, exactly one owner membership matches `projects.owner_id`, old-owner manager retention is preserved, failed transactions leave state unchanged, and the complete regression suite passes.
+
 ## Phase 3: Core Business Modules
 
 Implement:
 
 * Files, upload metadata, download, preview, and sharing.
 * Messages, threads, notifications, and comments.
-* Ownership transfer and share-token behavior only after separate approval.
+* Share-token behavior only after separate approval.
 * Admin user/settings/log views.
 * Internal API service and private network routing.
 * Redis-backed sessions, cache, queue, and temporary data.
@@ -1425,7 +1437,7 @@ This design phase is considered stable when:
 * The threat model prevents accidental use against real systems.
 * The roadmap limits each vulnerability increment to two or three issues before verification.
 
-The next implementation step after the finalized Phase 2.2c authorization model and Phase 2.2d membership mutation is separately approved ownership transfer or share-token work. Phase 2.2d must not introduce CSRF or intentional vulnerability behavior.
+The next implementation step after the finalized Phase 2.2e ownership transfer is separately approved File/Share access. Phase 2.2e must not introduce CSRF or intentional vulnerability behavior.
 
 ---
 

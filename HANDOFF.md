@@ -12,15 +12,15 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 ## Current Status
 
-**Current phase:** AcmeCloud product model design complete after Phase 2.2d; implementation work stopped and no next phase has started
+**Current phase:** Phase 2.2e Ownership Transfer implemented locally after full verification; commit and push are pending
 
-**Active work:** No active implementation process. The product model is documented in `docs/architecture/product-model.md`. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the Phase 2.2c/2.2d HTML/REST project and membership workflows loaded.
+**Active work:** No active implementation process. Phase 2.2e is complete locally and awaiting the final commit/push boundary. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the Phase 2.2c/2.2d/2.2e HTML/REST project workflows loaded.
 
-**Next allowed increment:** Begin Phase 2.2e Ownership Transfer only after separate explicit approval; share access, CSRF, and intentional vulnerability work remain deferred
+**Next allowed increment:** File/Share access only after separate approval; CSRF and intentional vulnerability work remain deferred
 
 **Intentional vulnerabilities:** None implemented
 
-**Product model boundary:** This phase adds documentation only. No production code, API route, database table/column, seed data, or intentional vulnerability was added.
+**Phase 2.2e boundary:** This phase adds Ownership Transfer only. No File/Folder, Share Link, CSRF, Webhook, API Key, Workspace, or intentional vulnerability behavior was added.
 
 **Branch:** `main`
 
@@ -128,7 +128,7 @@ Implemented and pushed without intentional vulnerabilities:
 Deferred by scope:
 
 * Membership invite, role-change, and removal routes were deferred from 2.2c and implemented in Phase 2.2d.
-* Ownership transfer.
+* Ownership transfer was deferred from 2.2c and implemented in Phase 2.2e.
 * Share-token access.
 * CSRF protection and intentional vulnerability behavior.
 
@@ -147,7 +147,7 @@ Implemented and pushed without intentional vulnerabilities:
 
 Deferred by scope:
 
-* Ownership transfer.
+* Ownership transfer was deferred from 2.2c REST parity and implemented in Phase 2.2e.
 * Share-token access.
 * CSRF protection and intentional vulnerability behavior.
 
@@ -167,7 +167,7 @@ Implemented locally after full verification without intentional vulnerabilities:
 
 Deferred by scope:
 
-* Ownership transfer.
+* Ownership transfer is implemented in Phase 2.2e; Share Link remains deferred.
 * Share-token access.
 * CSRF protection and intentional vulnerability behavior.
 
@@ -185,6 +185,24 @@ Completed as a documentation-only phase after Phase 2.2d:
 * Recorded the future security assets and trust boundaries most important for IDOR/BOLA and broken-access-control research.
 
 No production code, API, database schema, seed data, ownership transfer, File/Folder workflow, Share Link workflow, CSRF protection, or intentional vulnerability was implemented in this phase.
+
+### Phase 2.2e Ownership Transfer
+
+Implemented locally after full verification without intentional vulnerabilities:
+
+* Independent `OwnershipTransferService` and `OwnershipTransferRepository` transaction boundary.
+* Target-aware `ProjectPolicy.can_transfer_ownership()` for current owner and global admin only.
+* Active existing-member target requirement; ordinary role mutation cannot assign `owner`.
+* Atomic transition of `projects.owner_id`, old owner membership to `manager`, and target membership to `owner`.
+* Project, membership, actor, and target row locking with owner-invariant revalidation and rollback on expected-row or transaction failure.
+* HTML `GET/POST /project/<project_id>/ownership/transfer` and REST `POST /api/projects/<project_id>/ownership-transfer`.
+* Tests for actor/target authorization, active status, self/owner/non-member targets, private/team object scope, IDOR/BOLA, rollback, invariant failure, and HTML/REST parity.
+* Architecture documentation at `docs/architecture/ownership-transfer.md`.
+
+Deferred by scope:
+
+* File/Folder and Share Link workflows.
+* CSRF, Webhook, API Key, learning/challenge/audit mode, and intentional vulnerability behavior.
 
 ## Runtime Topology
 
@@ -289,11 +307,13 @@ The following checks have passed after a reset:
 * Nginx landing page returns AcmeCloud/WebSec Lab HTML.
 * `/health` returns database, Redis, and internal-api status `ok`.
 * Nginx does not expose `/internal/health`.
-* Full unit and integration suite after membership mutation: `88 passed`.
+* Full unit and integration suite after ownership transfer: `103 passed`.
 * REST project API integration and service-delegation suite: `17 passed`.
-* Membership targeted unit suite: `19 passed`.
+* Membership and ownership targeted unit suite: `25 passed`.
 * Membership integration suite: `9 passed`.
+* Ownership transfer integration suite: `9 passed`.
 * Owner invariant, duplicate membership, IDOR/BOLA, target-aware manager/admin boundaries, and HTML/REST parity: passed.
+* Ownership transfer transaction rollback, locking strategy, invariant failure, actor/target boundaries, and HTML/REST parity: passed.
 * HTML project authorization tests remain green inside the full suite.
 * HTML/REST authorization parity: passed.
 * Project IDOR defense and serialization boundary tests: passed.
@@ -310,11 +330,11 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c authorization finalization, and Phase 2.2d membership mutation are saved on GitHub through `b9da551`. Product model documentation is the current local documentation increment.
+* Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c authorization finalization, and Phase 2.2d membership mutation are saved on GitHub through `b9da551`. Phase 2.2e is complete locally pending commit/push.
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
-* Ownership transfer, share-token access, and CSRF remain deferred.
+* Share-token access, File/Folder workflows, and CSRF remain deferred.
 * `/dev/mail` intentionally exposes raw verification links only to local/test admins; it is not a real mail service.
 * Registration compensation cannot guarantee recovery from a host-wide MySQL outage during the compensating delete; the route remains a generic 503 and no normal success is reported.
 * No learning mode, challenge mode, audit mode, PoC, patch, or vulnerability test exists yet.
@@ -343,14 +363,14 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Next Work
 
-The AcmeCloud product model is documented and the HTML/REST project CRUD plus Phase 2.2d membership mutation remain complete and pushed after full verification. Work is stopped at the design boundary. The next implementation plan should be reviewed and explicitly approved before starting Phase 2.2e Ownership Transfer.
+The AcmeCloud product model, HTML/REST project CRUD, Phase 2.2d membership mutation, and Phase 2.2e Ownership Transfer are complete locally after full verification. Work is stopped at the implementation boundary. The next implementation plan should be reviewed and explicitly approved before starting File/Share access.
 
 Recommended next increment order:
 
-1. Obtain separate approval for Phase 2.2e Ownership Transfer.
+1. Obtain separate approval for File/Share access.
 2. Establish CSRF/security hardening before adding more browser state-changing workflows.
-3. Implement File/Share access only after child-resource policy and storage boundaries are approved.
-4. Re-run the full Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c, and Phase 2.2d regression suites after each approved increment.
+3. Implement child-resource policy and storage boundaries before share links.
+4. Re-run the full Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c, Phase 2.2d, and Phase 2.2e regression suites after each approved increment.
 
 Do not introduce vulnerability behavior until the normal business workflow is stable and a separate phase is approved.
 
