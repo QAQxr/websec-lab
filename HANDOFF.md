@@ -12,15 +12,15 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 ## Current Status
 
-**Current phase:** Phase 2.2d membership mutation finalized and pushed after verification; work stopped at the phase boundary
+**Current phase:** AcmeCloud product model design complete after Phase 2.2d; implementation work stopped and no next phase has started
 
-**Active work:** No active implementation process. Phase 2.2d is complete and pushed. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the Phase 2.2c/2.2d HTML/REST project and membership workflows loaded.
+**Active work:** No active implementation process. The product model is documented in `docs/architecture/product-model.md`. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the Phase 2.2c/2.2d HTML/REST project and membership workflows loaded.
 
-**Next allowed increment:** Ownership transfer, share-token access, CSRF, or intentional vulnerability work only after separate explicit approval
+**Next allowed increment:** Begin Phase 2.2e Ownership Transfer only after separate explicit approval; share access, CSRF, and intentional vulnerability work remain deferred
 
 **Intentional vulnerabilities:** None implemented
 
-**Working tree:** Clean after the Phase 2.2d implementation and status commits; `main` and `origin/main` are synchronized.
+**Product model boundary:** This phase adds documentation only. No production code, API route, database table/column, seed data, or intentional vulnerability was added.
 
 **Branch:** `main`
 
@@ -32,11 +32,9 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Phase 2.2c REST parity commit:** `ba008a4 Implement Phase 2.2c REST project parity`.
 
-**Phase 2.2d membership mutation commit:** `b9da551 Implement Phase 2.2d membership mutation`.
+**Phase 2.2d implementation baseline:** `b9da551 Implement Phase 2.2d membership mutation`.
 
-**Current HEAD:** `b9da551`.
-
-**Remote state:** `main` and `origin/main` are synchronized at `b9da551`.
+**Remote implementation baseline:** `main` and `origin/main` were synchronized at `b9da551` before this documentation phase.
 
 ## What Has Been Completed
 
@@ -173,6 +171,21 @@ Deferred by scope:
 * Share-token access.
 * CSRF protection and intentional vulnerability behavior.
 
+### Product Model Design
+
+Completed as a documentation-only phase after Phase 2.2d:
+
+* Confirmed AcmeCloud as a small-team collaboration and file-management SaaS.
+* Confirmed the existing `Project` model remains the core team container; no separate `Workspace` entity is introduced.
+* Documented Account, User, Session, Profile, account status, Project, Membership, ownership, visibility, and global-role boundaries.
+* Defined future File/Folder ownership versus access, upload/download, lifecycle, metadata, and child-resource authorization boundaries without implementing them.
+* Defined future Share Link modes, expiration, revocation, bounded actions, and no-default-public-access behavior without implementing them.
+* Mapped comments, messages, notifications, API keys, webhooks, internal-api, users, audit logs, and system settings to their product/trust boundaries.
+* Recorded the recommended roadmap: Ownership Transfer first, then security hardening and approved File/Share access, Phase 3 collaboration modules, and Phase 4 vulnerable variants.
+* Recorded the future security assets and trust boundaries most important for IDOR/BOLA and broken-access-control research.
+
+No production code, API, database schema, seed data, ownership transfer, File/Folder workflow, Share Link workflow, CSRF protection, or intentional vulnerability was implemented in this phase.
+
 ## Runtime Topology
 
 ```text
@@ -297,7 +310,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c authorization finalization, and Phase 2.2d membership mutation are saved on GitHub through `b9da551`.
+* Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c authorization finalization, and Phase 2.2d membership mutation are saved on GitHub through `b9da551`. Product model documentation is the current local documentation increment.
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
@@ -330,13 +343,14 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Next Work
 
-The HTML and REST project CRUD plus Phase 2.2d membership mutation are complete and pushed after full verification. Work is stopped at the phase boundary. The next implementation plan should be reviewed and explicitly approved before adding ownership transfer, share-token behavior, CSRF, or intentional vulnerabilities.
+The AcmeCloud product model is documented and the HTML/REST project CRUD plus Phase 2.2d membership mutation remain complete and pushed after full verification. Work is stopped at the design boundary. The next implementation plan should be reviewed and explicitly approved before starting Phase 2.2e Ownership Transfer.
 
 Recommended next increment order:
 
-1. Obtain separate approval for ownership transfer or share-token behavior.
-2. Design CSRF and intentional vulnerability phases only after the normal business workflow is explicitly accepted.
-3. Re-run the full Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c, and Phase 2.2d regression suites after each approved increment.
+1. Obtain separate approval for Phase 2.2e Ownership Transfer.
+2. Establish CSRF/security hardening before adding more browser state-changing workflows.
+3. Implement File/Share access only after child-resource policy and storage boundaries are approved.
+4. Re-run the full Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c, and Phase 2.2d regression suites after each approved increment.
 
 Do not introduce vulnerability behavior until the normal business workflow is stable and a separate phase is approved.
 

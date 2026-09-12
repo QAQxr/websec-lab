@@ -12,6 +12,8 @@
 
 **Phase 2.2d membership mutation:** complete and pushed after final verification.
 
+**AcmeCloud product model design:** complete locally; no implementation changes were introduced.
+
 **Open Questions:** resolved for this phase.
 
 Phase 2.2a closeout decisions:
@@ -23,8 +25,8 @@ Phase 2.2a closeout decisions:
 * Phase 2.2b implementation commit: `31fc67e Implement Phase 2.2b authentication foundation`.
 * Phase 2.2b closeout fix commit: `c3b10f0 Fix Phase 2.2b mailbox access and registration consistency`.
 * Phase 2.2c REST parity commit: `ba008a4 Implement Phase 2.2c REST project parity`.
-* Phase 2.2d membership mutation commit: `b9da551 Implement Phase 2.2d membership mutation`.
-* Current local `HEAD` and `origin/main` remain synchronized at `b9da551`.
+* Phase 2.2d implementation baseline commit: `b9da551 Implement Phase 2.2d membership mutation`.
+* The product-model phase changes only documentation; no production code, API, schema, or seed changes were introduced.
 * Phase 2.2c HTML and REST CRUD plus Phase 2.2d membership mutation are implemented and pushed; ownership transfer and share-token access remain deferred.
 * `ProjectPolicy.access_for()` is the single authorization source; repository scopes are explicit and team visibility is read-only for non-members.
 * Global admin capability is separate from project membership; ownership uses `projects.owner_id` and mismatch cases fail closed.
