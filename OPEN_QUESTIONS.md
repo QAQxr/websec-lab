@@ -10,7 +10,7 @@
 
 **Phase 2.2c REST project parity:** complete after final verification.
 
-**Phase 2.2d membership mutation:** complete locally after final verification.
+**Phase 2.2d membership mutation:** complete and pushed after final verification.
 
 **Open Questions:** resolved for this phase.
 
@@ -23,8 +23,9 @@ Phase 2.2a closeout decisions:
 * Phase 2.2b implementation commit: `31fc67e Implement Phase 2.2b authentication foundation`.
 * Phase 2.2b closeout fix commit: `c3b10f0 Fix Phase 2.2b mailbox access and registration consistency`.
 * Phase 2.2c REST parity commit: `ba008a4 Implement Phase 2.2c REST project parity`.
-* Current local `HEAD` and `origin/main` remain synchronized at `ba008a4`; Phase 2.2d changes are intentionally uncommitted and unpushed.
-* Phase 2.2c HTML and REST CRUD plus Phase 2.2d membership mutation are implemented locally; ownership transfer and share-token access remain deferred.
+* Phase 2.2d membership mutation commit: `b9da551 Implement Phase 2.2d membership mutation`.
+* Current local `HEAD` and `origin/main` remain synchronized at `b9da551`.
+* Phase 2.2c HTML and REST CRUD plus Phase 2.2d membership mutation are implemented and pushed; ownership transfer and share-token access remain deferred.
 * `ProjectPolicy.access_for()` is the single authorization source; repository scopes are explicit and team visibility is read-only for non-members.
 * Global admin capability is separate from project membership; ownership uses `projects.owner_id` and mismatch cases fail closed.
 * REST routes reuse `ProjectService`, `ProjectPolicy`, and repository scopes; API serialization excludes internal project fields.

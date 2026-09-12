@@ -10,7 +10,7 @@
 
 **Scope:** local-only Web security training lab; no production deployment
 
-**Implementation status:** Phase 2.2d HTML and REST membership mutation finalized locally; ownership transfer and later business modules remain deferred
+**Implementation status:** Phase 2.2d HTML and REST membership mutation finalized and pushed; ownership transfer and later business modules remain deferred
 
 ---
 
@@ -1235,7 +1235,7 @@ Implement only after explicit approval:
 
 Gate: ordinary authenticated users can complete the primary HTML and REST project workflows, team visibility is read-only for non-members, private/shared objects remain scoped, HTML/REST authorization decisions are identical, and API serialization does not expose internal fields.
 
-### Phase 2.2d: Membership Mutation (complete locally)
+### Phase 2.2d: Membership Mutation (complete and pushed)
 
 Implement only after explicit approval:
 

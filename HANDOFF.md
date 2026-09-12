@@ -12,15 +12,15 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 ## Current Status
 
-**Current phase:** Phase 2.2d membership mutation finalized locally after verification; work stopped at the phase boundary
+**Current phase:** Phase 2.2d membership mutation finalized and pushed after verification; work stopped at the phase boundary
 
-**Active work:** No active implementation process. Phase 2.2d is complete locally and intentionally uncommitted/unpushed. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the Phase 2.2c/2.2d HTML/REST project and membership workflows loaded.
+**Active work:** No active implementation process. Phase 2.2d is complete and pushed. The Phase 2.1 Docker stack is running with the Phase 2.2a schema/seed, Phase 2.2b authentication foundation, and the Phase 2.2c/2.2d HTML/REST project and membership workflows loaded.
 
 **Next allowed increment:** Ownership transfer, share-token access, CSRF, or intentional vulnerability work only after separate explicit approval
 
 **Intentional vulnerabilities:** None implemented
 
-**Working tree:** Contains the pre-existing pause-status update plus Phase 2.2d source, test, and documentation changes. No Phase 2.2d commit or push was created.
+**Working tree:** Clean after the Phase 2.2d implementation and status commits; `main` and `origin/main` are synchronized.
 
 **Branch:** `main`
 
@@ -32,9 +32,11 @@ This is the current handoff and status document for WebSec Lab. Update it after 
 
 **Phase 2.2c REST parity commit:** `ba008a4 Implement Phase 2.2c REST project parity`.
 
-**Current HEAD:** `ba008a4`.
+**Phase 2.2d membership mutation commit:** `b9da551 Implement Phase 2.2d membership mutation`.
 
-**Remote state:** `main` and `origin/main` are synchronized at `ba008a4`.
+**Current HEAD:** `b9da551`.
+
+**Remote state:** `main` and `origin/main` are synchronized at `b9da551`.
 
 ## What Has Been Completed
 
@@ -295,7 +297,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Known Issues and Risks
 
-* Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c authorization finalization, and REST parity are saved on GitHub through `ba008a4`. Phase 2.2d is complete locally but intentionally remains uncommitted and unpushed.
+* Phase 2.1, Phase 2.2a, Phase 2.2b, Phase 2.2c authorization finalization, and Phase 2.2d membership mutation are saved on GitHub through `b9da551`.
 * Docker Compose reports that buildx is not installed and uses the fallback builder; buildx is intentionally not installed because the project builds and tests successfully without it.
 * Active MySQL and Redis volume sizes have not been measured separately.
 * The host has an unrelated listener on `127.0.0.1:3306`; it was not modified. The Compose project does not publish MySQL.
@@ -328,7 +330,7 @@ The host has an unrelated listener on `127.0.0.1:3306`. The WebSec Lab Compose p
 
 ## Next Work
 
-The HTML and REST project CRUD plus Phase 2.2d membership mutation are complete locally after full verification. Work is stopped at the phase boundary. The next implementation plan should be reviewed and explicitly approved before adding ownership transfer, share-token behavior, CSRF, or intentional vulnerabilities.
+The HTML and REST project CRUD plus Phase 2.2d membership mutation are complete and pushed after full verification. Work is stopped at the phase boundary. The next implementation plan should be reviewed and explicitly approved before adding ownership transfer, share-token behavior, CSRF, or intentional vulnerabilities.
 
 Recommended next increment order:
 
